@@ -1,0 +1,32 @@
+{
+    "name": "Zikr - Quran Audio",
+    "version": "1.0",
+    "description": "Listen to the Holy Quran by various Reciters.",
+    "manifest_version": 3,
+    "action": {
+        "default_popup": "src/popup/index.html",
+        "default_title": "Zikr",
+        "default_icon": "icons/icon.png"
+    },
+    "background": {
+        "service_worker": "background/service-worker.js",
+        "type": "module"
+    },
+    "permissions": [
+        "storage",
+        "offscreen"
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "src/offscreen/index.html",
+                "assets/*",
+                "src/index.css",
+                "icons/*"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
