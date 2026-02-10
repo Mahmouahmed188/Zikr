@@ -10,18 +10,18 @@ export interface Moshaf {
     name: string;
     server: string;
     surah_total: number;
-    surah_list: string; // "1,2,3..."
+    surah_list: string;
 }
 
 export interface Surah {
     id: number;
-    name: string; // Arabic or English name from API
-    englishName?: string; // Custom meta
-    verses?: number; // Custom meta
-    revelationType?: 'Makki' | 'Madani'; // Custom meta
-    audioUrl?: string; // e.g. server/001.mp3
-    arabicName?: string; // Custom meta for display
-    script?: string; // Custom meta for decorative Arabic letter
+    name: string;
+    englishName?: string;
+    verses?: number;
+    revelationType?: 'Makki' | 'Madani';
+    audioUrl?: string;
+    arabicName?: string;
+    script?: string;
 }
 
 export interface PlayerState {
@@ -36,3 +36,48 @@ export interface PlayerState {
 
 export type Theme = 'light' | 'dark';
 export type Language = 'eng' | 'ar';
+
+export interface ApiError {
+    message: string;
+    code: string;
+    status: number;
+}
+
+// API Response Types
+export interface ApiResponse<T> {
+    data: T;
+    success: boolean;
+    message?: string;
+}
+
+export interface RecitersResponse {
+    reciters: Reciter[];
+}
+
+export interface SurahsResponse {
+    suwar: Surah[];
+}
+
+export interface AudioUrlResponse {
+    audioUrl: string;
+}
+
+// App State Types
+export interface AppState {
+    language: Language;
+    lastPlayedSurah?: number;
+    lastReciterId?: number;
+    volume: number;
+}
+
+// Search Types
+export interface SearchResult<T> {
+    items: T[];
+    total: number;
+    hasMore: boolean;
+}
+
+export interface SearchFilters {
+    query: string;
+    language?: Language;
+}

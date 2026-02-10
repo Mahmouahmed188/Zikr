@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Volume2, VolumeX, Volume1 } from 'lucide-react';
 
 interface VolumeControlProps {
@@ -7,6 +8,7 @@ interface VolumeControlProps {
 }
 
 const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange }) => {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -45,10 +47,13 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
             <button
                 onClick={toggleVolumePanel}
                 className={`p-2 rounded-full transition-all duration-300 ${isOpen
-                    ? 'bg-primary/20 text-primary'
-                    : 'text-primary hover:bg-primary/10'
+                    ? 'text-primary'
+                    : 'text-primary hover:opacity-80'
                     }`}
-                aria-label="Volume control"
+                style={{
+                    backgroundColor: isOpen ? 'rgba(197, 160, 89, 0.2)' : 'transparent'
+                }}
+                aria-label={t('player.volumeControl')}
             >
                 <VolumeIcon size={16} className="transition-transform duration-300" />
             </button>
@@ -61,11 +66,18 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
                 >
                     {/* Arrow pointing down to icon */}
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full">
-                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-white/10" />
+                        <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]"
+                             style={{ borderTopColor: 'var(--glass-border)' }} />
                     </div>
 
                     {/* Volume Bar Container */}
-                    <div className="glass backdrop-blur-xl bg-dark-card/95 border border-white/10 rounded-2xl p-4 shadow-2xl">
+                    <div className="rounded-2xl p-4 shadow-2xl"
+                         style={{ 
+                             backgroundColor: 'var(--bg-card)',
+                             border: '1px solid var(--border-color)',
+                             backdropFilter: 'blur(20px)',
+                             WebkitBackdropFilter: 'blur(20px)'
+                         }}>
                         <div className="flex flex-col items-center gap-3">
                             {/* Percentage Display */}
                             <div className="text-xs font-bold text-primary tabular-nums">
@@ -73,7 +85,8 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
                             </div>
 
                             {/* Vertical Slider */}
-                            <div className="relative w-1 h-24 bg-white/10 rounded-full overflow-visible">
+                            <div className="relative w-1 h-24 rounded-full overflow-visible"
+                                 style={{ backgroundColor: 'var(--border-color)' }}>
                                 {/* Filled portion */}
                                 <div
                                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary to-primary-light rounded-full transition-all duration-150"
@@ -95,15 +108,17 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
                                         width: '100%',
                                         height: '100%'
                                     } as React.CSSProperties}
-                                    aria-label="Volume level"
+                                    aria-label={t('player.volumeLevel')}
                                 />
 
                                 {/* Interactive thumb */}
                                 <div
-                                    className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rounded-full shadow-lg shadow-primary/50 border-2 border-white/20 pointer-events-none transition-all duration-150"
+                                    className="absolute left-1/2 -translate-x-1/2 w-3 h-3 bg-primary rounded-full shadow-lg pointer-events-none transition-all duration-150"
                                     style={{
                                         bottom: `calc(${volume * 100}% - 6px)`,
                                         transform: 'translateX(-50%) scale(1)',
+                                        boxShadow: '0 0 10px rgba(197, 160, 89, 0.5)',
+                                        border: '2px solid rgba(255, 255, 255, 0.3)'
                                     }}
                                 />
                             </div>
@@ -111,8 +126,9 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
                             {/* Mute/Unmute Button */}
                             <button
                                 onClick={() => onVolumeChange(volume === 0 ? 0.5 : 0)}
-                                className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-white/60 hover:text-primary"
-                                aria-label={volume === 0 ? "Unmute" : "Mute"}
+                                className="p-1.5 rounded-lg transition-colors hover:text-primary"
+                                style={{ color: 'var(--text-muted)' }}
+                                aria-label={volume === 0 ? t('player.unmute') : t('player.mute')}
                             >
                                 {volume === 0 ? (
                                     <VolumeX size={14} />

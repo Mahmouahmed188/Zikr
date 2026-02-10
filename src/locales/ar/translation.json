@@ -1,0 +1,74 @@
+{
+  "app": {
+    "name": "Zikr",
+    "version": "Zikr Extension v1.0"
+  },
+  "common": {
+    "search": "بحث",
+    "loading": "جاري التحميل...",
+    "cancel": "إلغاء",
+    "clear": "مسح",
+    "close": "إغلاق",
+    "back": "رجوع",
+    "select": "اختيار",
+    "tapToChange": "اضغط للتغيير",
+    "currentlyActive": "نشط حالياً"
+  },
+  "surah": {
+    "title": "سورة",
+    "searchPlaceholder": "ابحث عن السورة بالاسم أو الرقم...",
+    "noResults": "لم يتم العثور على سور",
+    "startTyping": "ابدأ الكتابة للبحث...",
+    "selectToBegin": "اختر سورة للبدء",
+    "useSearch": "استخدم شريط البحث أعلاه للعثور والتشغيل",
+    "verses": "آية",
+    "revelationType": "نوع الوحي",
+    "meccan": "مكية",
+    "medinan": "مدنية"
+  },
+  "reciter": {
+    "title": "القارئ",
+    "selectReciter": "اختيار القارئ",
+    "searchPlaceholder": "ابحث عن القارئ بالاسم...",
+    "noResults": "لم يتم العثور على قراء مطابقين لبحثك",
+    "noRecitersAvailable": "لا يوجد قراء متاحين",
+    "currentlySelected": "المختار حالياً",
+    "recitersAvailable": "{{count}} قارئ متاح",
+    "unknownStyle": "نمط غير معروف",
+    "surahs": "سورة"
+  },
+  "player": {
+    "loadingQuran": "جاري تحميل بيانات القرآن...",
+    "reciterLabel": "القارئ",
+    "volumeControl": "التحكم في الصوت",
+    "volumeLevel": "مستوى الصوت",
+    "mute": "كتم الصوت",
+    "unmute": "إلغاء الكتم",
+    "nowPlayingFrom": "يُشغَّل الآن من"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "appearance": "المظهر",
+    "language": "اللغة",
+    "theme": {
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام",
+      "lightMode": "الوضع الفاتح",
+      "darkMode": "الوضع الداكن"
+    },
+    "languages": {
+      "english": "English",
+      "arabic": "العربية"
+    }
+  },
+  "errors": {
+    "failedToLoadQuran": "فشل تحميل بيانات القرآن. يرجى المحاولة مرة أخرى.",
+    "failedToFetch": "فشل جلب بيانات القرآن. استخدام البيانات المخزنة مؤقتاً إن وجدت.",
+    "failedToLoadAudio": "فشل تحميل الصوت. يرجى المحاولة مرة أخرى.",
+    "failedToPlay": "فشل تشغيل الصوت. يرجى المحاولة مرة أخرى.",
+    "failedToPlayAudio": "فشل تشغيل الصوت.",
+    "selectReciterFirst": "يرجى اختيار القارئ أولاً.",
+    "audioLoadFailed": "فشل تحميل الصوت. يرجى المحاولة مرة أخرى."
+  }
+}

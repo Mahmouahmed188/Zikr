@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Music, Check } from 'lucide-react';
 import { Reciter } from '../types';
 
@@ -10,6 +11,7 @@ interface ReciterSelectionProps {
 }
 
 const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedId, onSelect, onClose }) => {
+    const { t } = useTranslation();
     const [search, setSearch] = useState('');
 
     const filtered = useMemo(() => {
@@ -23,7 +25,7 @@ const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedI
                     <Search className="absolute left-3 top-3 text-gray-400" size={18} />
                     <input
                         className="w-full bg-gray-100 dark:bg-dark-surface p-2.5 pl-10 rounded-xl text-sm outline-none focus:ring-2 ring-primary/50 transition-all font-medium text-gray-700 dark:text-gray-200 placeholder-gray-500"
-                        placeholder="Search Reciter..."
+                        placeholder={t('reciter.searchPlaceholder')}
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         autoFocus
@@ -46,7 +48,7 @@ const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedI
                                 {reciter.name}
                             </h3>
                             <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span className="flex items-center gap-0.5"><Music size={10} /> {reciter.moshaf[0]?.name || 'Unknown Style'}</span>
+                                <span className="flex items-center gap-0.5"><Music size={10} /> {reciter.moshaf[0]?.name || t('reciter.unknownStyle')}</span>
                             </div>
                         </div>
                         {selectedId === reciter.id && (
@@ -57,7 +59,7 @@ const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedI
             </div>
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <button onClick={onClose} className="w-full py-3 rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-semibold text-sm hover:brightness-95 transition-all">
-                    Cancel
+                    {t('common.cancel')}
                 </button>
             </div>
         </div>

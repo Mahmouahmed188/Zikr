@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8" />
@@ -18,6 +18,15 @@
         #root {
             width: 100%;
             height: 100%;
+        }
+        
+        /* Prevent flash of wrong theme */
+        .no-transition {
+            transition: none !important;
+        }
+        
+        .no-transition * {
+            transition: none !important;
         }
     </style>
 </head>

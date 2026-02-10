@@ -1,0 +1,74 @@
+{
+  "app": {
+    "name": "Zikr",
+    "version": "Zikr Extension v1.0"
+  },
+  "common": {
+    "search": "Search",
+    "loading": "Loading...",
+    "cancel": "Cancel",
+    "clear": "Clear",
+    "close": "Close",
+    "back": "Back",
+    "select": "Select",
+    "tapToChange": "Tap to change",
+    "currentlyActive": "Currently active"
+  },
+  "surah": {
+    "title": "Surah",
+    "searchPlaceholder": "Search Surah by name or number...",
+    "noResults": "No surahs found",
+    "startTyping": "Start typing to search...",
+    "selectToBegin": "Select a Surah to Begin",
+    "useSearch": "Use the search bar above to find and play",
+    "verses": "Verses",
+    "revelationType": "Revelation Type",
+    "meccan": "Meccan",
+    "medinan": "Medinan"
+  },
+  "reciter": {
+    "title": "Reciter",
+    "selectReciter": "Select Reciter",
+    "searchPlaceholder": "Search reciter by name...",
+    "noResults": "No reciters found matching your search",
+    "noRecitersAvailable": "No reciters available",
+    "currentlySelected": "Currently Selected",
+    "recitersAvailable": "{{count}} reciters available",
+    "unknownStyle": "Unknown Style",
+    "surahs": "surahs"
+  },
+  "player": {
+    "loadingQuran": "Loading Quran data...",
+    "reciterLabel": "Reciter",
+    "volumeControl": "Volume control",
+    "volumeLevel": "Volume level",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "nowPlayingFrom": "Now Playing From"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "language": "Language",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "lightMode": "Light Mode",
+      "darkMode": "Dark Mode"
+    },
+    "languages": {
+      "english": "English",
+      "arabic": "Arabic (العربية)"
+    }
+  },
+  "errors": {
+    "failedToLoadQuran": "Failed to load Quran data. Please try again.",
+    "failedToFetch": "Failed to fetch Quran data. Using cached data if available.",
+    "failedToLoadAudio": "Failed to load audio. Please try again.",
+    "failedToPlay": "Failed to play audio. Please try again.",
+    "failedToPlayAudio": "Failed to play audio.",
+    "selectReciterFirst": "Please select a reciter first.",
+    "audioLoadFailed": "Failed to load audio. Please try again."
+  }
+}

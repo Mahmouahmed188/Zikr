@@ -13,10 +13,19 @@ export default {
             light: '#F0D48E', // Light Gold
             dark: '#8E733D', // Dark Gold
           },
+          // Dark theme colors
           dark: {
             bg: '#0F111A', // Deep Dark Blue/Black
             card: '#1A1D29', // Slightly lighter dark
             border: '#ffffff10', // White with 10% opacity
+            surface: '#252836',
+          },
+          // Light theme colors
+          light: {
+            bg: '#F8F9FC', // Soft white
+            card: '#FFFFFF', // Pure white
+            border: '#E5E7EB', // Light gray
+            surface: '#F1F5F9', // Slightly darker white
           },
         },
         fontFamily: {
@@ -26,7 +35,9 @@ export default {
         },
         boxShadow: {
           'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+          'glass-light': '0 8px 32px 0 rgba(0, 0, 0, 0.1)',
           'gold-glow': '0 0 15px rgba(197, 160, 89, 0.5)',
+          'gold-glow-light': '0 0 15px rgba(197, 160, 89, 0.3)',
         },
         backgroundImage: {
           'gold-gradient': 'linear-gradient(to right, #C5A059, #F0D48E)',

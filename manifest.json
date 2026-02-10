@@ -16,6 +16,11 @@
         "storage",
         "offscreen"
     ],
+    "host_permissions": [
+        "https://*.mp3quran.net/*",
+        "https://api.zikr.app/*",
+        "https://*.picsum.photos/*"
+    ],
     "web_accessible_resources": [
         {
             "resources": [

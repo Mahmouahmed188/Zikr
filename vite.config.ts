@@ -23,6 +23,7 @@ const copyManifest = () => {
 };
 
 export default defineConfig({
+  base: '', // CRITICAL: Use relative paths for Chrome Extension
   plugins: [react(), copyManifest()],
   build: {
     outDir: 'dist',
