@@ -1,8 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Music, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { Search, Music, Check, ArrowLeft, Loader2, BookOpen } from 'lucide-react';
 import { Reciter } from '../types';
 import { usePlayer } from '../context/PlayerContext';
+import {
+  normalizeArabic,
+  normalizeEnglish,
+  detectLanguage,
+  calculateSimilarity
+} from '../services/textNormalization';
 
 interface RecitersPageProps {
     onClose: () => void;
@@ -15,11 +21,59 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
 
     const filteredReciters = useMemo(() => {
         if (!search.trim()) return reciters;
-        const searchTerm = search.toLowerCase().trim();
-        return reciters.filter(r => 
-            r.name.toLowerCase().includes(searchTerm) ||
-            r.letter.toLowerCase().includes(searchTerm)
-        );
+
+        const trimmedSearch = search.trim();
+        const searchLang = detectLanguage(trimmedSearch);
+        
+        const normalizedSearch = searchLang === 'arabic' 
+            ? normalizeArabic(trimmedSearch)
+            : normalizeEnglish(trimmedSearch);
+
+        return reciters
+            .map(reciter => {
+                let score = 0;
+                let matchType: 'exact' | 'partial' | 'fuzzy' = 'fuzzy';
+
+                const searchTerms = [
+                    reciter.name,
+                    reciter.letter,
+                    reciter.englishName || '',
+                    ...(reciter.nameVariants || [])
+                ];
+
+                for (const term of searchTerms) {
+                    if (!term) continue;
+
+                    const normalizedTerm = searchLang === 'arabic'
+                        ? normalizeArabic(term)
+                        : normalizeEnglish(term);
+
+                    if (normalizedTerm === normalizedSearch) {
+                        score = Math.max(score, 1.0);
+                        matchType = 'exact';
+                    } else if (normalizedTerm.includes(normalizedSearch)) {
+                        const partialScore = normalizedSearch.length / normalizedTerm.length;
+                        score = Math.max(score, partialScore * 0.9);
+                        matchType = 'partial';
+                    } else if (normalizedSearch.includes(normalizedTerm)) {
+                        score = Math.max(score, 0.85);
+                        matchType = 'partial';
+                    } else {
+                        const similarity = calculateSimilarity(normalizedTerm, normalizedSearch);
+                        if (similarity >= 0.4) {
+                            score = Math.max(score, similarity * 0.7);
+                            matchType = 'fuzzy';
+                        }
+                    }
+
+                    if (score >= 1.0) break;
+                }
+
+                return { reciter, score, matchType };
+            })
+            .filter(({ score }) => score >= 0.4)
+            .sort((a, b) => b.score - a.score)
+            .map(({ reciter }) => reciter);
     }, [reciters, search]);
 
     const handleSelectReciter = (reciter: Reciter) => {
@@ -70,6 +124,16 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                         </button>
                     )}
                 </div>
+                {search && (
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                        <BookOpen size={12} />
+                        <span>
+                            {detectLanguage(search) === 'arabic' 
+                                ? 'بحث باللغة العربية' 
+                                : 'English search enabled'}
+                        </span>
+                    </div>
+                )}
             </div>
 
             {/* Reciters List */}

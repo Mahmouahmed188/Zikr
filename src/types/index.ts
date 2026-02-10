@@ -3,6 +3,13 @@ export interface Reciter {
     name: string;
     letter: string;
     moshaf: Moshaf[];
+    // Bilingual support fields
+    arabicName?: string;
+    englishName?: string;
+    transliterationKey?: string;
+    nameVariants?: string[];
+    biography?: string;
+    imageUrl?: string;
 }
 
 export interface Moshaf {

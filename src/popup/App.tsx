@@ -23,16 +23,16 @@ type ViewState = 'main' | 'settings' | 'reciters';
 const App: React.FC = () => {
     const { t } = useTranslation();
     useTheme();
-    const { 
-        surahs, 
-        currentSurah, 
-        currentReciter, 
-        isPlaying, 
+    const {
+        surahs,
+        currentSurah,
+        currentReciter,
+        isPlaying,
         isLoading: playerLoading,
         isDataLoading,
-        currentTime, 
-        duration, 
-        volume, 
+        currentTime,
+        duration,
+        volume,
         error: playerError,
         playSurah,
         togglePlay,
@@ -40,12 +40,12 @@ const App: React.FC = () => {
         playPrevious,
         seek,
         setVolume,
-        clearError 
+        clearError
     } = usePlayer();
-    
+
     // View state
     const [currentView, setCurrentView] = useState<ViewState>('main');
-    
+
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
@@ -78,16 +78,16 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="w-[500px] h-[600px] flex flex-col select-none relative overflow-hidden font-sans mx-auto"
-             style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-            
+        <div className="w-[500px] h-[550px] flex flex-col select-none relative overflow-hidden font-sans mx-auto"
+            style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
+
             {/* Error Toast */}
             {playerError && (
                 <div className="absolute top-4 left-4 right-4 z-50 p-3 rounded-xl flex items-center justify-between"
-                     style={{ 
-                         backgroundColor: 'rgba(239, 68, 68, 0.9)',
-                         color: 'white'
-                     }}>
+                    style={{
+                        backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                        color: 'white'
+                    }}>
                     <p className="text-sm">{playerError.startsWith('errors.') ? t(playerError) : playerError}</p>
                     <button onClick={clearError} className="text-sm font-bold px-2">✕</button>
                 </div>
@@ -107,7 +107,7 @@ const App: React.FC = () => {
                 <>
                     {/* Content Container */}
                     <div className="flex-1 flex flex-col px-5 pt-4 pb-4 overflow-hidden">
-                        
+
                         {/* Header */}
                         <header className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
@@ -134,8 +134,8 @@ const App: React.FC = () => {
 
                         {/* Search Bar */}
                         <div className="relative group z-50 mb-3">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors" 
-                                    style={{ color: 'var(--text-muted)' }} size={16} />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
+                                style={{ color: 'var(--text-muted)' }} size={16} />
                             <input
                                 type="text"
                                 placeholder={t('surah.searchPlaceholder')}
@@ -148,24 +148,24 @@ const App: React.FC = () => {
                                 className="w-full h-10 pl-10 pr-3 text-sm rounded-xl theme-input shadow-inner"
                             />
                             {isDataLoading && (
-                                <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin" 
-                                         style={{ color: 'var(--text-muted)' }} />
+                                <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin"
+                                    style={{ color: 'var(--text-muted)' }} />
                             )}
-                            
+
                             {/* Search Results Dropdown */}
                             {showSearchResults && (
                                 <div className="absolute top-full left-0 right-0 mt-2 glass rounded-2xl p-2 border max-h-60 overflow-y-auto animate-fade-in custom-scrollbar z-50"
-                                     style={{ borderColor: 'var(--glass-border)' }}>
+                                    style={{ borderColor: 'var(--glass-border)' }}>
                                     {filteredSurahs.length > 0 ? (
                                         filteredSurahs.map(surah => (
                                             <button
                                                 key={surah.id}
                                                 onClick={() => handleSelectSurah(surah)}
                                                 className="w-full flex items-center justify-between p-3 rounded-xl text-sm transition-colors group text-left"
-                                                style={{ 
+                                                style={{
                                                     color: 'var(--text-secondary)',
-                                                    backgroundColor: currentSurah?.id === surah.id 
-                                                        ? 'rgba(197, 160, 89, 0.1)' 
+                                                    backgroundColor: currentSurah?.id === surah.id
+                                                        ? 'rgba(197, 160, 89, 0.1)'
                                                         : 'transparent'
                                                 }}
                                                 onMouseEnter={(e) => {
@@ -183,10 +183,10 @@ const App: React.FC = () => {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium"
-                                                          style={{ 
-                                                              backgroundColor: 'var(--bg-surface)',
-                                                              color: 'var(--text-muted)'
-                                                          }}>
+                                                        style={{
+                                                            backgroundColor: 'var(--bg-surface)',
+                                                            color: 'var(--text-muted)'
+                                                        }}>
                                                         {surah.id}
                                                     </span>
                                                     <span className="group-hover:text-primary transition-colors">
@@ -207,8 +207,8 @@ const App: React.FC = () => {
 
                         {/* Main Surah Card */}
                         <div className="relative glass rounded-[32px] px-6 py-5 flex flex-col items-center overflow-hidden border shadow-glass group gold-glow-hover transition-all duration-700 flex-1"
-                             style={{ borderColor: 'var(--glass-border)' }}>
-                            
+                            style={{ borderColor: 'var(--glass-border)' }}>
+
                             {isDataLoading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                                     <Loader2 size={40} className="animate-spin" style={{ color: '#C5A059' }} />
@@ -221,9 +221,9 @@ const App: React.FC = () => {
 
                                     {/* Surah Info Badge */}
                                     <div className="px-3 py-1 rounded-full border mb-4 backdrop-blur-md"
-                                         style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
+                                        style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border-color)' }}>
                                         <span className="text-[9px] font-bold tracking-[0.15em] uppercase"
-                                              style={{ color: 'var(--text-tertiary)' }}>
+                                            style={{ color: 'var(--text-tertiary)' }}>
                                             {currentSurah ? `${t('surah.title')} ${currentSurah.id}` : t('surah.selectToBegin')}
                                             {currentSurah?.revelationType && ` • ${currentSurah.revelationType}`}
                                         </span>
@@ -245,7 +245,7 @@ const App: React.FC = () => {
 
                                             {currentSurah.verses && (
                                                 <div className="text-[10px] font-medium uppercase tracking-wider flex items-center gap-2 mb-3"
-                                                     style={{ color: 'var(--text-muted)' }}>
+                                                    style={{ color: 'var(--text-muted)' }}>
                                                     <span>{currentSurah.verses} {t('surah.verses')}</span>
                                                     {currentSurah.revelationType && (
                                                         <>
@@ -274,14 +274,14 @@ const App: React.FC = () => {
                                     {/* Progress Bar */}
                                     {currentSurah && duration > 0 && (
                                         <div className="w-full mt-2 mb-3">
-                                            <div 
+                                            <div
                                                 className="h-1 rounded-full cursor-pointer relative overflow-hidden"
                                                 style={{ backgroundColor: 'var(--bg-surface)' }}
                                                 onClick={handleProgressClick}
                                             >
-                                                <div 
+                                                <div
                                                     className="absolute left-0 top-0 h-full rounded-full transition-all"
-                                                    style={{ 
+                                                    style={{
                                                         width: `${(currentTime / duration) * 100}%`,
                                                         backgroundColor: '#C5A059'
                                                     }}
@@ -302,15 +302,15 @@ const App: React.FC = () => {
                                     <div className="w-full flex items-center justify-between mt-4">
                                         {/* Volume Control */}
                                         <div className="flex-1">
-                                            <VolumeControl 
-                                                volume={volume} 
-                                                onVolumeChange={setVolume} 
+                                            <VolumeControl
+                                                volume={volume}
+                                                onVolumeChange={setVolume}
                                             />
                                         </div>
 
                                         {/* Playback Controls */}
                                         <div className="flex items-center gap-4 mx-4">
-                                            <button 
+                                            <button
                                                 className="transition-all hover:scale-110 active:scale-95"
                                                 style={{ color: 'var(--icon-color-muted)' }}
                                                 onClick={playPrevious}
@@ -320,7 +320,7 @@ const App: React.FC = () => {
                                             >
                                                 <SkipBack size={20} />
                                             </button>
-                                            
+
                                             <button
                                                 onClick={togglePlay}
                                                 disabled={!currentSurah || playerLoading}
@@ -335,8 +335,8 @@ const App: React.FC = () => {
                                                     <Play size={24} fill="currentColor" style={{ color: 'var(--bg-primary)' }} className="ml-1" />
                                                 )}
                                             </button>
-                                            
-                                            <button 
+
+                                            <button
                                                 className="transition-all hover:scale-110 active:scale-95"
                                                 style={{ color: 'var(--icon-color-muted)' }}
                                                 onClick={playNext}
@@ -349,7 +349,7 @@ const App: React.FC = () => {
                                         </div>
 
                                         {/* Reciter Display - Clickable */}
-                                        <div 
+                                        <div
                                             className="flex flex-col items-end flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                                             onClick={() => setCurrentView('reciters')}
                                         >
@@ -357,12 +357,12 @@ const App: React.FC = () => {
                                                 {t('player.reciterLabel')}
                                             </span>
                                             <div className="flex items-center gap-1.5 p-0.5 pl-2 pr-0.5 rounded-full border"
-                                                 style={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)' }}>
+                                                style={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)' }}>
                                                 <span className="font-amiri text-[11px] opacity-90 whitespace-nowrap">
                                                     {currentReciter?.name || t('common.select')}
                                                 </span>
                                                 <div className="w-5 h-5 rounded-full border border-primary/30 flex items-center justify-center text-[8px] font-bold"
-                                                     style={{ backgroundColor: 'var(--bg-surface)' }}>
+                                                    style={{ backgroundColor: 'var(--bg-surface)' }}>
                                                     {currentReciter?.letter || '?'}
                                                 </div>
                                             </div>
