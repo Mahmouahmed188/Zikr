@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings as SettingsIcon, Search, Play, Pause, SkipBack, SkipForward, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Search, Play, Pause, SkipBack, SkipForward, Loader2, BookOpen } from 'lucide-react';
 import Waveform from '../components/Waveform';
 import VolumeControl from '../components/VolumeControl';
 import SettingsPage from '../components/Settings';
@@ -49,23 +49,121 @@ const App: React.FC = () => {
     // Search state
     const [searchQuery, setSearchQuery] = useState('');
     const [showSearchResults, setShowSearchResults] = useState(false);
+    const [showAllSurahs, setShowAllSurahs] = useState(false);
 
-    // Filter surahs based on search query
+    // Refs for click-outside detection
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+
+    // Click outside handler
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+                setShowSearchResults(false);
+                setShowAllSurahs(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Get available Surahs for current reciter
+    const availableSurahsForReciter = useMemo(() => {
+        if (!currentReciter || surahs.length === 0) return surahs;
+
+        // This is a simple approach - in production, you'd use the API service
+        // For now, we'll check against the reciter's moshaf data
+        const availableSurahIds = new Set<number>();
+
+        if (currentReciter.moshaf && currentReciter.moshaf.length > 0) {
+            currentReciter.moshaf.forEach(moshaf => {
+                if (moshaf.surah_list) {
+                    if (moshaf.surah_list.includes(',')) {
+                        const parts = moshaf.surah_list.split(',');
+                        parts.forEach(part => {
+                            const trimmed = part.trim();
+                            if (trimmed.includes('-')) {
+                                const [start, end] = trimmed.split('-').map(Number);
+                                for (let i = start; i <= end; i++) {
+                                    availableSurahIds.add(i);
+                                }
+                            } else {
+                                const surahId = parseInt(trimmed, 10);
+                                if (!isNaN(surahId)) {
+                                    availableSurahIds.add(surahId);
+                                }
+                            }
+                        });
+                    } else {
+                        const surahId = parseInt(moshaf.surah_list.trim(), 10);
+                        if (!isNaN(surahId)) {
+                            availableSurahIds.add(surahId);
+                        }
+                    }
+                }
+
+                if (moshaf.surahs && Array.isArray(moshaf.surahs)) {
+                    moshaf.surahs.forEach((surahId: number) => {
+                        availableSurahIds.add(surahId);
+                    });
+                }
+            });
+        }
+
+        // If no specific Surahs found, assume all are available (fallback)
+        if (availableSurahIds.size === 0) {
+            return surahs;
+        }
+
+        return surahs.filter(s => availableSurahIds.has(s.id));
+    }, [currentReciter, surahs]);
+
+    // Filter surahs based on search query and current reciter
     const filteredSurahs = useMemo(() => {
+        const sourceSurahs = availableSurahsForReciter;
+
+        if (showAllSurahs) {
+            return sourceSurahs.sort((a, b) => a.id - b.id);
+        }
+
         if (!searchQuery.trim()) return [];
+
         const q = searchQuery.toLowerCase().trim();
-        return surahs.filter(s =>
-            s.name.toLowerCase().includes(q) ||
-            s.englishName?.toLowerCase().includes(q) ||
-            s.id.toString() === q
-        ).slice(0, 10);
-    }, [surahs, searchQuery]);
+        return sourceSurahs
+            .filter(s =>
+                s.name.toLowerCase().includes(q) ||
+                s.englishName?.toLowerCase().includes(q) ||
+                s.id.toString() === q
+            )
+            .slice(0, 10);
+    }, [searchQuery, availableSurahsForReciter, showAllSurahs]);
 
     // Handle surah selection
     const handleSelectSurah = (surah: Surah) => {
         playSurah(surah);
         setSearchQuery('');
         setShowSearchResults(false);
+        setShowAllSurahs(false);
+    };
+
+    // Handle "Open All Surahs" click
+    const handleOpenAllSurahs = () => {
+        setShowAllSurahs(true);
+        setShowSearchResults(true);
+    };
+
+    // Handle search input focus
+    const handleSearchFocus = () => {
+        if (searchQuery.length > 0 || showAllSurahs) {
+            setShowSearchResults(true);
+        }
+    };
+
+    // Handle search input change
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        setShowAllSurahs(false);
+        setShowSearchResults(e.target.value.length > 0);
     };
 
     // Handle progress bar click
@@ -133,23 +231,30 @@ const App: React.FC = () => {
                         </header>
 
                         {/* Search Bar */}
-                        <div className="relative group z-50 mb-3">
+                        <div className="relative group z-50 mb-3" ref={searchContainerRef}>
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 transition-colors"
                                 style={{ color: 'var(--text-muted)' }} size={16} />
                             <input
                                 type="text"
                                 placeholder={t('surah.searchPlaceholder')}
                                 value={searchQuery}
-                                onChange={(e) => {
-                                    setSearchQuery(e.target.value);
-                                    setShowSearchResults(e.target.value.length > 0);
-                                }}
-                                onFocus={() => setShowSearchResults(searchQuery.length > 0)}
-                                className="w-full h-10 pl-10 pr-3 text-sm rounded-xl theme-input shadow-inner"
+                                onChange={handleSearchChange}
+                                onFocus={handleSearchFocus}
+                                className="w-full h-10 pl-10 pr-10 text-sm rounded-xl theme-input shadow-inner"
                             />
-                            {isDataLoading && (
-                                <Loader2 size={16} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin"
+                            {isDataLoading ? (
+                                <Loader2 size={16} className="absolute right-3 top-1/2 animate-spin"
                                     style={{ color: 'var(--text-muted)' }} />
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={handleOpenAllSurahs}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md transition-colors hover:bg-white/10 dark:hover:bg-white/10"
+                                    style={{ color: 'var(--text-muted)' }}
+                                    title="View all Surahs"
+                                >
+                                    <BookOpen size={14} />
+                                </button>
                             )}
 
                             {/* Search Results Dropdown */}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Music, Check, ArrowLeft, Loader2, BookOpen } from 'lucide-react';
+import { Search, Check, ArrowLeft, Loader2, BookOpen } from 'lucide-react';
 import { Reciter } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 import {
@@ -23,8 +23,8 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
 
         const trimmedSearch = search.trim();
         const searchLang = detectLanguage(trimmedSearch);
-        
-        const normalizedSearch = searchLang === 'arabic' 
+
+        const normalizedSearch = searchLang === 'arabic'
             ? normalizeArabic(trimmedSearch)
             : normalizeEnglish(trimmedSearch);
 
@@ -92,10 +92,10 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
 
     return (
         <div className="flex flex-col h-full animate-fade-in"
-             style={{ backgroundColor: 'var(--bg-primary)' }}>
+            style={{ backgroundColor: 'var(--bg-primary)' }}>
             {/* Header */}
             <header className="flex items-center gap-3 p-6 border-b"
-                    style={{ borderColor: 'var(--border-color)' }}>
+                style={{ borderColor: 'var(--border-color)' }}>
                 <button
                     onClick={onClose}
                     className="p-2.5 rounded-full glass hover:bg-white/10 dark:hover:bg-white/10 transition-colors"
@@ -114,7 +114,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
             <div className="p-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
                 <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2"
-                            style={{ color: 'var(--text-muted)' }} size={18} />
+                        style={{ color: 'var(--text-muted)' }} size={18} />
                     <input
                         type="text"
                         value={search}
@@ -137,8 +137,8 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                     <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
                         <BookOpen size={12} />
                         <span>
-                            {detectLanguage(search) === 'arabic' 
-                                ? 'بحث باللغة العربية' 
+                            {detectLanguage(search) === 'arabic'
+                                ? 'بحث باللغة العربية'
                                 : 'English search enabled'}
                         </span>
                     </div>
@@ -156,7 +156,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                     </div>
                 ) : filteredReciters.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-2 py-12">
-                        <Music size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
+                        <BookOpen size={48} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
                         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                             {search ? t('reciter.noResults') : t('reciter.noRecitersAvailable')}
                         </p>
@@ -164,7 +164,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                             <button
                                 onClick={() => setSearch('')}
                                 className="text-sm mt-2 px-4 py-2 rounded-lg border transition-colors"
-                                style={{ 
+                                style={{
                                     color: '#C5A059',
                                     borderColor: 'rgba(197, 160, 89, 0.3)'
                                 }}
@@ -179,51 +179,48 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                             <button
                                 key={reciter.id}
                                 onClick={() => handleSelectReciter(reciter)}
-                                className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${
-                                    currentReciter?.id === reciter.id 
-                                        ? 'border' 
-                                        : 'border border-transparent hover:bg-white/5 dark:hover:bg-white/5'
-                                }`}
+                                className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${currentReciter?.id === reciter.id
+                                    ? 'border'
+                                    : 'border border-transparent hover:bg-white/5 dark:hover:bg-white/5'
+                                    }`}
                                 style={{
-                                    backgroundColor: currentReciter?.id === reciter.id 
-                                        ? 'rgba(197, 160, 89, 0.1)' 
+                                    backgroundColor: currentReciter?.id === reciter.id
+                                        ? 'rgba(197, 160, 89, 0.1)'
                                         : 'var(--bg-card)',
-                                    borderColor: currentReciter?.id === reciter.id 
-                                        ? 'rgba(197, 160, 89, 0.3)' 
+                                    borderColor: currentReciter?.id === reciter.id
+                                        ? 'rgba(197, 160, 89, 0.3)'
                                         : undefined
                                 }}
                             >
-                                <div 
-                                    className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
-                                        currentReciter?.id === reciter.id 
-                                            ? '' 
-                                            : ''
-                                    }`}
+                                <div
+                                    className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${currentReciter?.id === reciter.id
+                                        ? ''
+                                        : ''
+                                        }`}
                                     style={{
-                                        backgroundColor: currentReciter?.id === reciter.id 
-                                            ? 'rgba(197, 160, 89, 0.2)' 
+                                        backgroundColor: currentReciter?.id === reciter.id
+                                            ? 'rgba(197, 160, 89, 0.2)'
                                             : 'var(--bg-surface)',
-                                        color: currentReciter?.id === reciter.id 
-                                            ? '#C5A059' 
+                                        color: currentReciter?.id === reciter.id
+                                            ? '#C5A059'
                                             : 'var(--text-muted)'
                                     }}
                                 >
                                     {reciter.letter || reciter.name[0]}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <h3 className={`text-sm font-semibold truncate ${
-                                        currentReciter?.id === reciter.id ? 'gold-text' : ''
-                                    }`}
+                                    <h3 className={`text-sm font-semibold truncate ${currentReciter?.id === reciter.id ? 'gold-text' : ''
+                                        }`}
                                         style={{
-                                            color: currentReciter?.id === reciter.id 
-                                                ? undefined 
+                                            color: currentReciter?.id === reciter.id
+                                                ? undefined
                                                 : 'var(--text-primary)'
                                         }}
                                     >
                                         {reciter.name}
                                     </h3>
                                     <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
-                                        <Music size={10} />
+                                        <BookOpen size={10} />
                                         <span className="truncate">
                                             {reciter.moshaf[0]?.name || t('reciter.unknownStyle')}
                                         </span>
@@ -233,7 +230,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                 </div>
                                 {currentReciter?.id === reciter.id && (
                                     <div className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
-                                         style={{ backgroundColor: 'rgba(197, 160, 89, 0.2)' }}>
+                                        style={{ backgroundColor: 'rgba(197, 160, 89, 0.2)' }}>
                                         <Check size={14} style={{ color: '#C5A059' }} />
                                     </div>
                                 )}
@@ -247,12 +244,12 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
             {currentReciter && (
                 <div className="p-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
                     <div className="flex items-center gap-3 p-3 rounded-xl"
-                         style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
+                        style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold"
-                             style={{ 
-                                 backgroundColor: 'rgba(197, 160, 89, 0.2)',
-                                 color: '#C5A059'
-                             }}>
+                            style={{
+                                backgroundColor: 'rgba(197, 160, 89, 0.2)',
+                                color: '#C5A059'
+                            }}>
                             {currentReciter.letter || currentReciter.name[0]}
                         </div>
                         <div className="flex-1">

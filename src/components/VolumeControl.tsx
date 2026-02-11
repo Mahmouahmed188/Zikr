@@ -61,23 +61,23 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
             {/* Floating Volume Slider Panel */}
             {isOpen && (
                 <div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 animate-volume-appear"
+                    className="absolute bottom-full left-1/2 -translate-x-1/2 animate-volume-appear"
                     style={{ minWidth: '40px' }}
                 >
                     {/* Arrow pointing down to icon */}
                     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full">
                         <div className="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px]"
-                             style={{ borderTopColor: 'var(--glass-border)' }} />
+                            style={{ borderTopColor: 'var(--glass-border)' }} />
                     </div>
 
                     {/* Volume Bar Container */}
                     <div className="rounded-2xl p-4 shadow-2xl"
-                         style={{ 
-                             backgroundColor: 'var(--bg-card)',
-                             border: '1px solid var(--border-color)',
-                             backdropFilter: 'blur(20px)',
-                             WebkitBackdropFilter: 'blur(20px)'
-                         }}>
+                        style={{
+                            backgroundColor: 'var(--bg-card)',
+                            border: '1px solid var(--border-color)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)'
+                        }}>
                         <div className="flex flex-col items-center gap-3">
                             {/* Percentage Display */}
                             <div className="text-xs font-bold text-primary tabular-nums">
@@ -86,7 +86,7 @@ const VolumeControl: React.FC<VolumeControlProps> = ({ volume, onVolumeChange })
 
                             {/* Vertical Slider */}
                             <div className="relative w-1 h-24 rounded-full overflow-visible"
-                                 style={{ backgroundColor: 'var(--border-color)' }}>
+                                style={{ backgroundColor: 'var(--border-color)' }}>
                                 {/* Filled portion */}
                                 <div
                                     className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-primary to-primary-light rounded-full transition-all duration-150"
