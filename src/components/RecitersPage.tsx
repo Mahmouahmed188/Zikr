@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Check, ArrowLeft, Loader2, BookOpen } from 'lucide-react';
-import { Reciter } from '../types';
+import { Search, Check, ArrowLeft, Loader2, BookOpen, Filter, X } from 'lucide-react';
+import { Reciter, RecitationType, CompletionLevel, SortOption } from '../types';
 import { usePlayer } from '../context/PlayerContext';
 import {
     normalizeArabic,
@@ -17,73 +17,201 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
     const { t } = useTranslation();
     const { reciters, currentReciter, setReciter, isDataLoading } = usePlayer();
     const [search, setSearch] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
+
+    // Filter states
+    const [filters, setFilters] = useState({
+        recitationType: 'all' as RecitationType,
+        rewaya: 'all',
+        completionLevel: 'all' as CompletionLevel,
+        sortBy: 'name-asc' as SortOption
+    });
+
+    // Refs for click-outside detection
+    const filterDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Extract unique rewaya values from reciters
+    const availableRewaya = useMemo(() => {
+        const rewayaSet = new Set<string>();
+        reciters.forEach(reciter => {
+            if (reciter.rewaya) {
+                rewayaSet.add(reciter.rewaya);
+            }
+        });
+        return Array.from(rewayaSet).sort();
+    }, [reciters]);
+
+    // Click outside handler for filter dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (filterDropdownRef.current && !filterDropdownRef.current.contains(event.target as Node)) {
+                setShowFilters(false);
+            }
+        };
+
+        if (showFilters) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showFilters]);
+
+    // Helper: Get total surahs for a reciter
+    const getReciterSurahCount = (reciter: Reciter): number => {
+        if (!reciter.moshaf || reciter.moshaf.length === 0) return 0;
+        const maxSurahs = Math.max(...reciter.moshaf.map(m => m.surah_total || 0));
+        return maxSurahs;
+    };
+
+    // Helper: Determine recitation type based on moshaf name
+    const getRecitationType = (reciter: Reciter): RecitationType => {
+        if (!reciter.moshaf || reciter.moshaf.length === 0) return 'other';
+        
+        const moshafName = (reciter.moshaf[0].name || '').toLowerCase();
+        if (moshafName.includes('mujawwad')) return 'mujawwad';
+        if (moshafName.includes('murattal')) return 'murattal';
+        return 'other';
+    };
+
+    // Check if reciter passes all filters
+    const reciterPassesFilters = (reciter: Reciter): boolean => {
+        const surahCount = getReciterSurahCount(reciter);
+        const recitationType = getRecitationType(reciter);
+
+        // Recitation type filter
+        if (filters.recitationType !== 'all' && recitationType !== filters.recitationType) {
+            return false;
+        }
+
+        // Rewaya filter
+        if (filters.rewaya !== 'all' && reciter.rewaya !== filters.rewaya) {
+            return false;
+        }
+
+        // Completion level filter
+        if (filters.completionLevel !== 'all') {
+            if (filters.completionLevel === 'full' && surahCount !== 114) return false;
+            if (filters.completionLevel === 'high' && surahCount <= 60) return false;
+            if (filters.completionLevel === 'low' && surahCount >= 60) return false;
+        }
+
+        return true;
+    };
+
+    // Apply sorting
+    const applySorting = (recitersToSort: Reciter[]): Reciter[] => {
+        const sorted = [...recitersToSort];
+        
+        switch (filters.sortBy) {
+            case 'name-asc':
+                return sorted.sort((a, b) => a.name.localeCompare(b.name));
+            case 'name-desc':
+                return sorted.sort((a, b) => b.name.localeCompare(a.name));
+            case 'surahs-desc':
+                return sorted.sort((a, b) => getReciterSurahCount(b) - getReciterSurahCount(a));
+            case 'surahs-asc':
+                return sorted.sort((a, b) => getReciterSurahCount(a) - getReciterSurahCount(b));
+            default:
+                return sorted;
+        }
+    };
 
     const filteredReciters = useMemo(() => {
-        if (!search.trim()) return reciters;
+        // Step 1: Apply filters
+        let filtered = reciters.filter(reciterPassesFilters);
 
-        const trimmedSearch = search.trim();
-        const searchLang = detectLanguage(trimmedSearch);
+        // Step 2: If search query exists, apply text search
+        if (search.trim()) {
+            const trimmedSearch = search.trim();
+            const searchLang = detectLanguage(trimmedSearch);
 
-        const normalizedSearch = searchLang === 'arabic'
-            ? normalizeArabic(trimmedSearch)
-            : normalizeEnglish(trimmedSearch);
+            const normalizedSearch = searchLang === 'arabic'
+                ? normalizeArabic(trimmedSearch)
+                : normalizeEnglish(trimmedSearch);
 
-        return reciters
-            .map(reciter => {
-                const searchTerms = [
-                    reciter.name,
-                    reciter.letter,
-                    reciter.englishName || '',
-                    reciter.name_ar || '',
-                    reciter.name_en || '',
-                    ...(reciter.nameVariants || [])
-                ].filter(Boolean);
+            filtered = filtered
+                .map(reciter => {
+                    const searchTerms = [
+                        reciter.name,
+                        reciter.letter,
+                        reciter.englishName || '',
+                        reciter.name_ar || '',
+                        reciter.name_en || '',
+                        ...(reciter.nameVariants || [])
+                    ].filter(Boolean);
 
-                let score = 0;
-                let matchType: 'exact' | 'prefix' | 'word-start' | 'contains' | null = null;
+                    let score = 0;
+                    let matchType: 'exact' | 'prefix' | 'word-start' | 'contains' | null = null;
 
-                for (const term of searchTerms) {
-                    const normalizedTerm = searchLang === 'arabic'
-                        ? normalizeArabic(term)
-                        : normalizeEnglish(term);
+                    for (const term of searchTerms) {
+                        const normalizedTerm = searchLang === 'arabic'
+                            ? normalizeArabic(term)
+                            : normalizeEnglish(term);
 
-                    if (normalizedSearch.length === 0) continue;
+                        if (normalizedSearch.length === 0) continue;
 
-                    if (normalizedTerm === normalizedSearch) {
-                        score = 100;
-                        matchType = 'exact';
-                        break;
-                    }
-
-                    if (normalizedTerm.startsWith(normalizedSearch)) {
-                        const prefixScore = 90 + (normalizedSearch.length / normalizedTerm.length) * 10;
-                        score = Math.max(score, prefixScore);
-                        matchType = 'prefix';
-                        continue;
-                    }
-
-                    const words = normalizedTerm.split(/\s+/);
-                    for (const word of words) {
-                        if (word.startsWith(normalizedSearch)) {
-                            score = Math.max(score, 75 + (normalizedSearch.length / word.length) * 15);
-                            matchType = 'word-start';
+                        if (normalizedTerm === normalizedSearch) {
+                            score = 100;
+                            matchType = 'exact';
                             break;
+                        }
+
+                        if (normalizedTerm.startsWith(normalizedSearch)) {
+                            const prefixScore = 90 + (normalizedSearch.length / normalizedTerm.length) * 10;
+                            score = Math.max(score, prefixScore);
+                            matchType = 'prefix';
+                            continue;
+                        }
+
+                        const words = normalizedTerm.split(/\s+/);
+                        for (const word of words) {
+                            if (word.startsWith(normalizedSearch)) {
+                                score = Math.max(score, 75 + (normalizedSearch.length / word.length) * 15);
+                                matchType = 'word-start';
+                                break;
+                            }
+                        }
+
+                        if (normalizedTerm.includes(normalizedSearch)) {
+                            const containsScore = 50 + (normalizedSearch.length / normalizedTerm.length) * 20;
+                            score = Math.max(score, containsScore);
+                            if (!matchType) matchType = 'contains';
                         }
                     }
 
-                    if (normalizedTerm.includes(normalizedSearch)) {
-                        const containsScore = 50 + (normalizedSearch.length / normalizedTerm.length) * 20;
-                        score = Math.max(score, containsScore);
-                        if (!matchType) matchType = 'contains';
-                    }
-                }
+                    return { reciter, score, matchType };
+                })
+                .filter(({ score, matchType }) => score > 0 && matchType !== null)
+                .sort((a, b) => b.score - a.score)
+                .map(({ reciter }) => reciter);
+        }
 
-                return { reciter, score, matchType };
-            })
-            .filter(({ score, matchType }) => score > 0 && matchType !== null)
-            .sort((a, b) => b.score - a.score)
-            .map(({ reciter }) => reciter);
-    }, [reciters, search]);
+        // Step 3: Apply sorting
+        return applySorting(filtered);
+    }, [reciters, search, filters, availableRewaya]);
+
+    // Clear all filters
+    const clearAllFilters = () => {
+        setFilters({
+            recitationType: 'all',
+            rewaya: 'all',
+            completionLevel: 'all',
+            sortBy: 'name-asc'
+        });
+    };
+
+    // Check if any filters are active
+    const hasActiveFilters = filters.recitationType !== 'all' || 
+                             filters.rewaya !== 'all' || 
+                             filters.completionLevel !== 'all' ||
+                             filters.sortBy !== 'name-asc';
+
+    // Count of active filters
+    const activeFilterCount = [
+        filters.recitationType !== 'all',
+        filters.rewaya !== 'all',
+        filters.completionLevel !== 'all',
+        filters.sortBy !== 'name-asc'
+    ].filter(Boolean).length;
 
     const handleSelectReciter = (reciter: Reciter) => {
         setReciter(reciter);
@@ -120,17 +248,162 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder={t('reciter.searchPlaceholder')}
-                        className="w-full h-11 pl-11 pr-4 rounded-xl theme-input text-sm"
+                        className="w-full h-11 pl-11 pr-12 rounded-xl theme-input text-sm"
                         autoFocus
                     />
-                    {search && (
+                    {/* Filter button */}
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {hasActiveFilters && (
+                            <button
+                                type="button"
+                                onClick={clearAllFilters}
+                                className="p-1.5 rounded-md hover:bg-white/10 dark:hover:bg-white/10 transition-colors"
+                                style={{ color: 'var(--text-muted)' }}
+                                title="Clear all filters"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
                         <button
-                            onClick={() => setSearch('')}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs px-2 py-1 rounded-md"
-                            style={{ color: 'var(--text-muted)' }}
+                            type="button"
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`p-1.5 rounded-md transition-colors ${showFilters || hasActiveFilters ? 'bg-primary/20' : 'hover:bg-white/10 dark:hover:bg-white/10'}`}
+                            style={{ color: showFilters || hasActiveFilters ? '#C5A059' : 'var(--text-muted)' }}
+                            title="Filter reciters"
                         >
-                            {t('common.clear')}
+                            <Filter size={14} />
                         </button>
+                    </div>
+
+                    {/* Filter Dropdown */}
+                    {showFilters && (
+                        <div 
+                            ref={filterDropdownRef}
+                            className="absolute top-full left-0 right-0 mt-2 glass rounded-2xl p-4 border z-50 animate-fade-in"
+                            style={{ borderColor: 'var(--glass-border)' }}
+                        >
+                            <div className="space-y-4">
+                                {/* Header */}
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                        Filter Reciters
+                                    </span>
+                                    {activeFilterCount > 0 && (
+                                        <button
+                                            onClick={clearAllFilters}
+                                            className="text-xs px-2 py-1 rounded-md hover:bg-white/10 dark:hover:bg-white/10 transition-colors"
+                                            style={{ color: '#C5A059' }}
+                                        >
+                                            Clear All
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Recitation Type Filter */}
+                                <div>
+                                    <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                                        Recitation Type
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['all', 'murattal', 'mujawwad'] as RecitationType[]).map(type => (
+                                            <button
+                                                key={type}
+                                                type="button"
+                                                onClick={() => setFilters(prev => ({ ...prev, recitationType: type }))}
+                                                className={`text-xs py-2 px-3 rounded-lg capitalize transition-colors ${
+                                                    filters.recitationType === type
+                                                        ? 'bg-primary/20 text-primary font-medium'
+                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                }`}
+                                                style={{
+                                                    color: filters.recitationType === type ? '#C5A059' : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                {type === 'all' ? 'All' : type}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Rewaya Filter */}
+                                {availableRewaya.length > 0 && (
+                                    <div>
+                                        <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                                            Rewaya
+                                        </label>
+                                        <select
+                                            value={filters.rewaya}
+                                            onChange={(e) => setFilters(prev => ({ ...prev, rewaya: e.target.value }))}
+                                            className="w-full h-9 px-3 rounded-lg text-xs theme-input"
+                                        >
+                                            <option value="all">All Rewaya</option>
+                                            {availableRewaya.map(rewaya => (
+                                                <option key={rewaya} value={rewaya}>
+                                                    {rewaya}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                {/* Completion Level Filter */}
+                                <div>
+                                    <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                                        Completion Level
+                                    </label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {(['all', 'full', 'high', 'low'] as CompletionLevel[]).map(level => (
+                                            <button
+                                                key={level}
+                                                type="button"
+                                                onClick={() => setFilters(prev => ({ ...prev, completionLevel: level }))}
+                                                className={`text-xs py-2 px-3 rounded-lg capitalize transition-colors ${
+                                                    filters.completionLevel === level
+                                                        ? 'bg-primary/20 text-primary font-medium'
+                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                }`}
+                                                style={{
+                                                    color: filters.completionLevel === level ? '#C5A059' : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                {level === 'all' ? 'All' : level === 'full' ? '114 Surahs' : level === 'high' ? '> 60 Surahs' : '< 60 Surahs'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Sort By Filter */}
+                                <div>
+                                    <label className="text-xs font-medium mb-2 block" style={{ color: 'var(--text-muted)' }}>
+                                        Sort By
+                                    </label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {([
+                                            { value: 'name-asc', label: 'Name (A-Z)' },
+                                            { value: 'name-desc', label: 'Name (Z-A)' },
+                                            { value: 'surahs-desc', label: 'Most Surahs' },
+                                            { value: 'surahs-asc', label: 'Fewest Surahs' }
+                                        ] as const).map(({ value, label }) => (
+                                            <button
+                                                key={value}
+                                                type="button"
+                                                onClick={() => setFilters(prev => ({ ...prev, sortBy: value as SortOption }))}
+                                                className={`text-xs py-2 px-3 rounded-lg transition-colors ${
+                                                    filters.sortBy === value
+                                                        ? 'bg-primary/20 text-primary font-medium'
+                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                }`}
+                                                style={{
+                                                    color: filters.sortBy === value ? '#C5A059' : 'var(--text-secondary)'
+                                                }}
+                                            >
+                                                {label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
                 </div>
                 {search && (
@@ -141,6 +414,20 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                 ? 'بحث باللغة العربية'
                                 : 'English search enabled'}
                         </span>
+                    </div>
+                )}
+                {hasActiveFilters && !showFilters && (
+                    <div className="mt-2 flex items-center gap-2 text-xs" style={{ color: '#C5A059' }}>
+                        <Filter size={12} />
+                        <span>
+                            {activeFilterCount} filter{activeFilterCount > 1 ? 's' : ''} active
+                        </span>
+                        <button
+                            onClick={() => setShowFilters(true)}
+                            className="underline hover:opacity-80"
+                        >
+                            Edit
+                        </button>
                     </div>
                 )}
             </div>

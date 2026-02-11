@@ -159,3 +159,16 @@ export interface UnifiedSearchResult {
   reciters: ReciterWithResources[];
   query: string;
 }
+
+export type RecitationType = 'murattal' | 'mujawwad' | 'other' | 'all';
+
+export type CompletionLevel = 'full' | 'high' | 'low' | 'all';
+
+export type SortOption = 'name-asc' | 'name-desc' | 'surahs-desc' | 'surahs-asc';
+
+export interface ReciterFilters {
+  recitationType: RecitationType;
+  rewaya: string;
+  completionLevel: CompletionLevel;
+  sortBy: SortOption;
+}
