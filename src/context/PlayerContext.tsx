@@ -46,26 +46,25 @@ const STORAGE_KEYS = {
     LAST_SURAH: 'zikr_last_surah',
 };
 
-    // Error translation keys
-    const ERROR_KEYS = {
-        FAILED_TO_LOAD_QURAN: 'errors.failedToLoadQuran',
-        FAILED_TO_FETCH: 'errors.failedToFetch',
-        FAILED_TO_LOAD_AUDIO: 'errors.failedToLoadAudio',
-        FAILED_TO_PLAY: 'errors.failedToPlay',
-        FAILED_TO_PLAY_AUDIO: 'errors.failedToPlayAudio',
-        SELECT_RECITER_FIRST: 'errors.selectReciterFirst',
-        AUDIO_LOAD_FAILED: 'errors.audioLoadFailed',
-        SURAH_NOT_AVAILABLE: 'errors.surahNotAvailable',
-        INVALID_AUDIO_URL: 'errors.invalidAudioUrl',
-    };
+// Error translation keys
+const ERROR_KEYS = {
+    FAILED_TO_LOAD_QURAN: 'errors.failedToLoadQuran',
+    FAILED_TO_FETCH: 'errors.failedToFetch',
+    FAILED_TO_LOAD_AUDIO: 'errors.failedToLoadAudio',
+    FAILED_TO_PLAY: 'errors.failedToPlay',
+    FAILED_TO_PLAY_AUDIO: 'errors.failedToPlayAudio',
+    SELECT_RECITER_FIRST: 'errors.selectReciterFirst',
+    AUDIO_LOAD_FAILED: 'errors.audioLoadFailed',
+    SURAH_NOT_AVAILABLE: 'errors.surahNotAvailable',
+    INVALID_AUDIO_URL: 'errors.invalidAudioUrl',
+};
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-    // Audio element ref
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    
     // Refs to avoid closure issues
     const currentSurahRef = useRef<Surah | null>(null);
     const currentReciterRef = useRef<Reciter | null>(null);
+    const offscreenReadyRef = useRef(false);
+    const audioRefReadyRef = useRef(false);  // Track if audio element has src loaded
     
     // State
     const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
@@ -113,6 +112,105 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    // Send message to offscreen document (fire-and-forget, no response expected)
+    const sendToOffscreen = useCallback((type: string, payload?: any): void => {
+        if (!offscreenReadyRef.current) {
+            console.warn('Offscreen not ready yet, queuing message:', type);
+            // Messages will work once offscreen is ready, chrome will queue them
+        }
+        try {
+            chrome.runtime.sendMessage({ target: 'offscreen', type, payload }, () => {
+                if (chrome.runtime.lastError) {
+                    console.warn('Message to offscreen failed:', type, chrome.runtime.lastError.message);
+                }
+            });
+        } catch (e) {
+            console.error('Failed to send message to offscreen:', e);
+        }
+    }, []);
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        currentSurahRef.current = currentSurah;
+    }, [currentSurah]);
+    
+    useEffect(() => {
+        currentReciterRef.current = currentReciter;
+    }, [currentReciter]);
+
+    // Initialize offscreen document and sync with popup state
+    useEffect(() => {
+        const initializeOffscreen = async () => {
+            try {
+                const existingContexts = await chrome.runtime.getContexts({
+                    contextTypes: [chrome.runtime.ContextType.OFFSCREEN_DOCUMENT],
+                });
+
+                if (existingContexts.length === 0) {
+                    await chrome.offscreen.createDocument({
+                        url: 'src/offscreen/index.html',
+                        reasons: [chrome.offscreen.Reason.AUDIO_PLAYBACK],
+                        justification: 'Playing Quran audio in the background',
+                    });
+                    // Wait a bit for offscreen to initialize
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                }
+                offscreenReadyRef.current = true;
+                console.log('Offscreen document ready');
+            } catch (err) {
+                console.error('Failed to initialize offscreen:', err);
+            }
+        };
+
+        initializeOffscreen();
+
+        // Listen for offscreen status updates
+        const handleMessage = (message: any) => {
+            if (message.target === 'popup') {
+                if (message.type === 'AUDIO_STATUS_UPDATE') {
+                    const { isPlaying, currentTime, duration, volume, isLooping, currentUrl } = message.payload;
+                    setIsPlaying(isPlaying);
+                    setCurrentTime(currentTime);
+                    setDuration(duration);
+                    setVolumeState(volume);
+                    setIsLooping(isLooping);
+                    // Track if audio has a source loaded
+                    audioRefReadyRef.current = !!currentUrl;
+                } else if (message.type === 'AUDIO_ENDED') {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                    // Auto-play next surah
+                    const reciter = currentReciterRef.current;
+                    const surahsList = surahs;
+                    if (reciter && surahsList.length > 0) {
+                        const currentIndex = surahsList.findIndex(s => s.id === currentSurahRef.current?.id);
+                        if (currentIndex < surahsList.length - 1) {
+                            const nextSurah = surahsList[currentIndex + 1];
+                            // Use setTimeout to avoid state update during render
+                            setTimeout(() => playSurah(nextSurah), 100);
+                        }
+                    }
+                } else if (message.type === 'AUDIO_ERROR') {
+                    console.error('Audio error from offscreen:', message.payload);
+                    setError(message.payload?.error || 'Audio playback failed');
+                    setIsPlaying(false);
+                }
+            }
+        };
+
+        chrome.runtime.onMessage.addListener(handleMessage);
+
+        // Initial status fetch after offscreen is ready
+        const fetchInitialStatus = setTimeout(() => {
+            sendToOffscreen('GET_STATUS');
+        }, 500);
+
+        return () => {
+            chrome.runtime.onMessage.removeListener(handleMessage);
+            clearTimeout(fetchInitialStatus);
+        };
+    }, [sendToOffscreen, surahs]);
+
     // Load initial data and preferences
     useEffect(() => {
         const initialize = async () => {
@@ -136,7 +234,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 const cachedLastSurah = await getFromStorage<number>(STORAGE_KEYS.LAST_SURAH);
 
                 if (cachedReciter) setCurrentReciter(cachedReciter);
-                if (cachedVolume) setVolumeState(cachedVolume);
+                if (cachedVolume) {
+                    setVolumeState(cachedVolume);
+                    // Volume will be set in offscreen after initialization
+                }
 
                 if (cachedLastSurah && fetchedSurahs) {
                     const lastSurah = fetchedSurahs.find(s => s.id === cachedLastSurah);
@@ -154,6 +255,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
         initialize();
     }, []);
+
+    // Update volume when changed
+    useEffect(() => {
+        if (offscreenReadyRef.current) {
+            sendToOffscreen('SET_VOLUME', { volume });
+        }
+        saveToStorage(STORAGE_KEYS.LAST_VOLUME, volume);
+    }, [volume, sendToOffscreen]);
 
     // Refresh data from API
     const refreshData = useCallback(async () => {
@@ -180,50 +289,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
     }, [apiService]);
 
-    // Initialize audio element
-    useEffect(() => {
-        const audio = new Audio();
-        audioRef.current = audio;
-
-        // Event listeners
-        audio.addEventListener('timeupdate', () => {
-            setCurrentTime(audio.currentTime);
-        });
-
-        audio.addEventListener('loadedmetadata', () => {
-            setDuration(audio.duration);
-        });
-
-        audio.addEventListener('ended', () => {
-            if (isLooping) {
-                audio.currentTime = 0;
-                audio.play();
-            } else {
-                setIsPlaying(false);
-                setCurrentTime(0);
-            }
-        });
-
-        audio.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
-            setError(ERROR_KEYS.AUDIO_LOAD_FAILED);
-            setIsPlaying(false);
-        });
-
-        return () => {
-            audio.pause();
-            audio.src = '';
-        };
-    }, [isLooping]);
-
-    // Update volume when changed
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.volume = volume;
-        }
-        saveToStorage(STORAGE_KEYS.LAST_VOLUME, volume);
-    }, [volume]);
-
     // Play surah
     const playSurah = useCallback(async (surah: Surah) => {
         setIsLoading(true);
@@ -245,63 +310,62 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 return;
             }
             
-            if (audioRef.current) {
-                audioRef.current.src = audioUrl;
-                audioRef.current.load();
-                
-                const playPromise = audioRef.current.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            setIsPlaying(true);
-                            setCurrentSurah(surah);
-                            saveToStorage(STORAGE_KEYS.LAST_SURAH, surah.id);
-                        })
-                        .catch((err) => {
-                            console.error('Play failed:', err);
-                            if ((err as any).name === 'NotSupportedError' || (err as any).name === 'AbortError') {
-                                setError(ERROR_KEYS.INVALID_AUDIO_URL);
-                            } else {
-                                setError(ERROR_KEYS.FAILED_TO_PLAY);
-                            }
-                            setIsPlaying(false);
-                        });
-                }
-            }
+            // Play in offscreen audio
+            sendToOffscreen('PLAY', { url: audioUrl });
+            setIsPlaying(true);
+            setCurrentSurah(surah);
+            saveToStorage(STORAGE_KEYS.LAST_SURAH, surah.id);
         } catch (err) {
             console.error('Failed to load surah:', err);
             setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
         } finally {
             setIsLoading(false);
         }
-    }, [apiService]);
-
-    // Keep refs in sync with state
-    useEffect(() => {
-        currentSurahRef.current = currentSurah;
-    }, [currentSurah]);
-    
-    useEffect(() => {
-        currentReciterRef.current = currentReciter;
-    }, [currentReciter]);
+    }, [apiService, sendToOffscreen]);
 
     const play = useCallback(() => {
-        if (audioRef.current && currentSurah) {
-            audioRef.current.play()
-                .then(() => setIsPlaying(true))
-                .catch((err) => {
-                    console.error('Play failed:', err);
-                    setError(ERROR_KEYS.FAILED_TO_PLAY_AUDIO);
-                });
+        // Check if we have something to play
+        const surah = currentSurahRef.current;
+        const reciter = currentReciterRef.current;
+        
+        if (!surah || !reciter || !apiService) {
+            setError(ERROR_KEYS.SELECT_RECITER_FIRST);
+            return;
         }
-    }, [currentSurah]);
+        
+        // If audio is paused but already has a source loaded, just resume
+        if (!isPlaying && audioRefReadyRef.current) {
+            sendToOffscreen('TOGGLE_PLAY');
+            return;
+        }
+        
+        // Otherwise, load the audio URL first (first play scenario)
+        setIsLoading(true);
+        setError(null);
+        
+        try {
+            const audioUrl = apiService.getSurahAudioUrl(reciter.id, surah.id);
+            
+            if (!audioUrl) {
+                setError(ERROR_KEYS.SURAH_NOT_AVAILABLE);
+                setIsLoading(false);
+                return;
+            }
+            
+            // Play with URL (this sets src and plays in offscreen)
+            sendToOffscreen('PLAY', { url: audioUrl });
+            setIsPlaying(true);
+        } catch (err) {
+            console.error('Failed to load audio:', err);
+            setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [isPlaying, sendToOffscreen, apiService]);
 
     const pause = useCallback(() => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            setIsPlaying(false);
-        }
-    }, []);
+        sendToOffscreen('PAUSE');
+    }, [sendToOffscreen]);
 
     const togglePlay = useCallback(() => {
         if (isPlaying) {
@@ -312,20 +376,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, [isPlaying, play, pause]);
 
     const stop = useCallback(() => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-            setIsPlaying(false);
-            setCurrentTime(0);
-        }
-    }, []);
+        sendToOffscreen('STOP');
+    }, [sendToOffscreen]);
 
     const seek = useCallback((time: number) => {
-        if (audioRef.current) {
-            audioRef.current.currentTime = time;
-            setCurrentTime(time);
-        }
-    }, []);
+        sendToOffscreen('SEEK', { time });
+    }, [sendToOffscreen]);
 
     const setVolume = useCallback((newVolume: number) => {
         const clampedVolume = Math.max(0, Math.min(1, newVolume));
@@ -333,8 +389,10 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const toggleLoop = useCallback(() => {
-        setIsLooping(prev => !prev);
-    }, []);
+        const newLoopState = !isLooping;
+        setIsLooping(newLoopState);
+        sendToOffscreen('SET_LOOP', { loop: newLoopState });
+    }, [isLooping, sendToOffscreen]);
 
     const setReciter = useCallback(async (reciter: Reciter) => {
         await saveToStorage(STORAGE_KEYS.CURRENT_RECITER, reciter);
