@@ -205,7 +205,7 @@ export class BilingualSearchEngine {
     }
 
     for (const moshaf of reciter.moshaf) {
-      if (moshaf.surah_list && moshaf.surah_list.includes(surahId.toString())) {
+      if (this.hasSurahInMoshaf(moshaf, surahId)) {
         const surahStr = surahId.toString().padStart(3, '0');
         const server = moshaf.server.replace(/\/$/, '');
         return `${server}/${surahStr}.mp3`;
@@ -219,6 +219,26 @@ export class BilingualSearchEngine {
     }
 
     return null;
+  }
+
+  private hasSurahInMoshaf(moshaf: any, surahId: number): boolean {
+    if (!moshaf.surah_list) return false;
+
+    const surahStr = surahId.toString();
+
+    if (moshaf.surah_list.includes(',')) {
+      const surahs = moshaf.surah_list.split(',');
+      return surahs.some((s: string) => {
+        const trimmed = s.trim();
+        if (trimmed.includes('-')) {
+          const [start, end] = trimmed.split('-').map(Number);
+          return surahId >= start && surahId <= end;
+        }
+        return trimmed === surahStr;
+      });
+    }
+
+    return moshaf.surah_list === surahStr;
   }
 
   getSurahWithResources(surahId: number, reciterId: number): SurahWithResources | null {

@@ -46,20 +46,26 @@ const STORAGE_KEYS = {
     LAST_SURAH: 'zikr_last_surah',
 };
 
-// Error translation keys
-const ERROR_KEYS = {
-    FAILED_TO_LOAD_QURAN: 'errors.failedToLoadQuran',
-    FAILED_TO_FETCH: 'errors.failedToFetch',
-    FAILED_TO_LOAD_AUDIO: 'errors.failedToLoadAudio',
-    FAILED_TO_PLAY: 'errors.failedToPlay',
-    FAILED_TO_PLAY_AUDIO: 'errors.failedToPlayAudio',
-    SELECT_RECITER_FIRST: 'errors.selectReciterFirst',
-    AUDIO_LOAD_FAILED: 'errors.audioLoadFailed',
-};
+    // Error translation keys
+    const ERROR_KEYS = {
+        FAILED_TO_LOAD_QURAN: 'errors.failedToLoadQuran',
+        FAILED_TO_FETCH: 'errors.failedToFetch',
+        FAILED_TO_LOAD_AUDIO: 'errors.failedToLoadAudio',
+        FAILED_TO_PLAY: 'errors.failedToPlay',
+        FAILED_TO_PLAY_AUDIO: 'errors.failedToPlayAudio',
+        SELECT_RECITER_FIRST: 'errors.selectReciterFirst',
+        AUDIO_LOAD_FAILED: 'errors.audioLoadFailed',
+        SURAH_NOT_AVAILABLE: 'errors.surahNotAvailable',
+        INVALID_AUDIO_URL: 'errors.invalidAudioUrl',
+    };
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
     // Audio element ref
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    
+    // Refs to avoid closure issues
+    const currentSurahRef = useRef<Surah | null>(null);
+    const currentReciterRef = useRef<Reciter | null>(null);
     
     // State
     const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
@@ -220,19 +226,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Play surah
     const playSurah = useCallback(async (surah: Surah) => {
-        if (!currentReciter || !apiService) {
-            setError(ERROR_KEYS.SELECT_RECITER_FIRST);
-            return;
-        }
-
         setIsLoading(true);
         setError(null);
 
         try {
-            const audioUrl = apiService.getSurahAudioUrl(currentReciter.id, surah.id);
+            const reciter = currentReciterRef.current;
+            if (!reciter || !apiService) {
+                setError(ERROR_KEYS.SELECT_RECITER_FIRST);
+                setIsLoading(false);
+                return;
+            }
+
+            const audioUrl = apiService.getSurahAudioUrl(reciter.id, surah.id);
             
             if (!audioUrl) {
-                setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
+                setError(ERROR_KEYS.SURAH_NOT_AVAILABLE);
                 setIsLoading(false);
                 return;
             }
@@ -251,7 +259,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                         })
                         .catch((err) => {
                             console.error('Play failed:', err);
-                            setError(ERROR_KEYS.FAILED_TO_PLAY);
+                            if ((err as any).name === 'NotSupportedError' || (err as any).name === 'AbortError') {
+                                setError(ERROR_KEYS.INVALID_AUDIO_URL);
+                            } else {
+                                setError(ERROR_KEYS.FAILED_TO_PLAY);
+                            }
                             setIsPlaying(false);
                         });
                 }
@@ -262,7 +274,16 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [currentReciter, apiService]);
+    }, [apiService]);
+
+    // Keep refs in sync with state
+    useEffect(() => {
+        currentSurahRef.current = currentSurah;
+    }, [currentSurah]);
+    
+    useEffect(() => {
+        currentReciterRef.current = currentReciter;
+    }, [currentReciter]);
 
     const play = useCallback(() => {
         if (audioRef.current && currentSurah) {
@@ -316,14 +337,17 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const setReciter = useCallback(async (reciter: Reciter) => {
-        setCurrentReciter(reciter);
         await saveToStorage(STORAGE_KEYS.CURRENT_RECITER, reciter);
+        setCurrentReciter(reciter);
         
-        // If currently playing, reload with new reciter
-        if (currentSurah && isPlaying) {
-            playSurah(currentSurah);
+        // If we have a current surah loaded, reload it with the new reciter
+        const surahToPlay = currentSurahRef.current;
+        if (surahToPlay) {
+            setTimeout(() => {
+                playSurah(surahToPlay);
+            }, 0);
         }
-    }, [currentSurah, isPlaying, playSurah]);
+    }, [playSurah]);
 
     const playNext = useCallback(() => {
         if (!currentSurah || surahs.length === 0) return;
