@@ -77,7 +77,7 @@ export class BilingualSearchEngine {
   }
 
   searchReciters(query: string, options: SearchOptions = {}): ReciterWithResources[] {
-    const { limit = 20, minScore = 30 } = options;
+    const { limit = 20, minScore = 50 } = options;
 
     if (!query || query.trim().length < 1) {
       return [];
@@ -146,16 +146,25 @@ export class BilingualSearchEngine {
     const normalizedQuery = normalizeText(query);
     const normalizedText = normalizeText(text);
 
-    if (normalizedQuery === normalizedText) {
+    if (normalizedQuery.length === 0) return 0;
+
+    if (normalizedText === normalizedQuery) {
       return 100;
     }
 
     if (normalizedText.startsWith(normalizedQuery)) {
-      return 90;
+      return 90 + (normalizedQuery.length / normalizedText.length) * 10;
+    }
+
+    const words = normalizedText.split(/\s+/);
+    for (const word of words) {
+      if (word.startsWith(normalizedQuery)) {
+        return 75 + (normalizedQuery.length / word.length) * 15;
+      }
     }
 
     if (normalizedText.includes(normalizedQuery)) {
-      return 80;
+      return 50 + (normalizedQuery.length / normalizedText.length) * 20;
     }
 
     const queryParts = normalizedQuery.split(' ').filter((p) => p.length > 0);

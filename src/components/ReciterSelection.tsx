@@ -3,10 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Search, Music, Check, BookOpen } from 'lucide-react';
 import { Reciter } from '../types';
 import {
-  normalizeArabic,
-  normalizeEnglish,
-  detectLanguage,
-  calculateSimilarity
+    normalizeArabic,
+    normalizeEnglish,
+    detectLanguage
 } from '../utils/textNormalization';
 
 interface ReciterSelectionProps {
@@ -32,47 +31,57 @@ const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedI
 
         return reciters
             .map(reciter => {
-                let score = 0;
-                let matchType: 'exact' | 'partial' | 'fuzzy' = 'fuzzy';
-
                 const searchTerms = [
                     reciter.name,
                     reciter.letter,
                     reciter.englishName || '',
+                    reciter.name_ar || '',
+                    reciter.name_en || '',
                     ...(reciter.nameVariants || [])
-                ];
+                ].filter(Boolean);
+
+                let score = 0;
+                let matchType: 'exact' | 'prefix' | 'word-start' | 'contains' | null = null;
 
                 for (const term of searchTerms) {
-                    if (!term) continue;
-
                     const normalizedTerm = searchLang === 'arabic'
                         ? normalizeArabic(term)
                         : normalizeEnglish(term);
 
+                    if (normalizedSearch.length === 0) continue;
+
                     if (normalizedTerm === normalizedSearch) {
-                        score = Math.max(score, 1.0);
+                        score = 100;
                         matchType = 'exact';
-                    } else if (normalizedTerm.includes(normalizedSearch)) {
-                        const partialScore = normalizedSearch.length / normalizedTerm.length;
-                        score = Math.max(score, partialScore * 0.9);
-                        matchType = 'partial';
-                    } else if (normalizedSearch.includes(normalizedTerm)) {
-                        score = Math.max(score, 0.85);
-                        matchType = 'partial';
-                    } else {
-                        const similarity = calculateSimilarity(normalizedTerm, normalizedSearch);
-                        if (similarity >= 0.4) {
-                            score = Math.max(score, similarity * 0.7);
-                            matchType = 'fuzzy';
+                        break;
+                    }
+
+                    if (normalizedTerm.startsWith(normalizedSearch)) {
+                        const prefixScore = 90 + (normalizedSearch.length / normalizedTerm.length) * 10;
+                        score = Math.max(score, prefixScore);
+                        matchType = 'prefix';
+                        continue;
+                    }
+
+                    const words = normalizedTerm.split(/\s+/);
+                    for (const word of words) {
+                        if (word.startsWith(normalizedSearch)) {
+                            score = Math.max(score, 75 + (normalizedSearch.length / word.length) * 15);
+                            matchType = 'word-start';
+                            break;
                         }
                     }
 
-                    if (score >= 1.0) break;
+                    if (normalizedTerm.includes(normalizedSearch)) {
+                        const containsScore = 50 + (normalizedSearch.length / normalizedTerm.length) * 20;
+                        score = Math.max(score, containsScore);
+                        if (!matchType) matchType = 'contains';
+                    }
                 }
 
                 return { reciter, score, matchType };
             })
-            .filter(({ score }) => score >= 0.4)
+            .filter(({ score, matchType }) => score > 0 && matchType !== null)
             .sort((a, b) => b.score - a.score)
             .map(({ reciter }) => reciter);
     }, [reciters, search]);
