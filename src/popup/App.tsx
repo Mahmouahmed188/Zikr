@@ -78,7 +78,7 @@ const App: React.FC = () => {
     };
 
     return (
-        <div className="w-[500px] h-[550px] flex flex-col select-none relative overflow-hidden font-sans mx-auto"
+        <div className="w-[500px] h-[570px] flex flex-col select-none relative overflow-hidden font-sans mx-auto"
             style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
             {/* Error Toast */}
@@ -358,7 +358,7 @@ const App: React.FC = () => {
                                             </span>
                                             <div className="flex items-center gap-1.5 p-0.5 pl-2 pr-0.5 rounded-full border"
                                                 style={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)' }}>
-                                                <span className="font-amiri text-[11px] opacity-90 whitespace-nowrap">
+                                                <span className="font-amiri text-[11px] opacity-90 truncate max-w-[80px] sm:max-w-[120px] block">
                                                     {currentReciter?.name || t('common.select')}
                                                 </span>
                                                 <div className="w-5 h-5 rounded-full border border-primary/30 flex items-center justify-center text-[8px] font-bold"
