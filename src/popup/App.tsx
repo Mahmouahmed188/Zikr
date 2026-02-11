@@ -272,29 +272,57 @@ const App: React.FC = () => {
                                     <Waveform />
 
                                     {/* Progress Bar */}
-                                    {currentSurah && duration > 0 && (
+                                    {currentSurah && (
                                         <div className="w-full mt-2 mb-3">
-                                            <div
-                                                className="h-1 rounded-full cursor-pointer relative overflow-hidden"
-                                                style={{ backgroundColor: 'var(--bg-surface)' }}
-                                                onClick={handleProgressClick}
-                                            >
-                                                <div
-                                                    className="absolute left-0 top-0 h-full rounded-full transition-all"
-                                                    style={{
-                                                        width: `${(currentTime / duration) * 100}%`,
-                                                        backgroundColor: '#C5A059'
-                                                    }}
-                                                />
-                                            </div>
-                                            <div className="flex justify-between mt-1">
-                                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                                                    {formatTime(currentTime)}
-                                                </span>
-                                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
-                                                    {formatTime(duration)}
-                                                </span>
-                                            </div>
+                                            {duration > 0 ? (
+                                                <>
+                                                    <div
+                                                        className="h-1 rounded-full cursor-pointer relative overflow-hidden"
+                                                        style={{ backgroundColor: 'var(--bg-surface)' }}
+                                                        onClick={handleProgressClick}
+                                                    >
+                                                        <div
+                                                            className="absolute left-0 top-0 h-full rounded-full transition-all"
+                                                            style={{
+                                                                width: `${(currentTime / duration) * 100}%`,
+                                                                backgroundColor: '#C5A059'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between mt-1">
+                                                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                            {formatTime(currentTime)}
+                                                        </span>
+                                                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                            {formatTime(duration)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div
+                                                        className="h-1 rounded-full relative overflow-hidden"
+                                                        style={{ backgroundColor: 'var(--bg-surface)' }}
+                                                    >
+                                                        <div
+                                                            className="absolute left-0 top-0 h-full rounded-full"
+                                                            style={{
+                                                                width: '0%',
+                                                                backgroundColor: '#C5A059',
+                                                                transition: 'none'
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="flex justify-between mt-1">
+                                                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                            {formatTime(currentTime)}
+                                                        </span>
+                                                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                                                            Loading...
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     )}
 

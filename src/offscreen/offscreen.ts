@@ -179,7 +179,14 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 audio.addEventListener('timeupdate', sendStatus);
 audio.addEventListener('play', sendStatus);
 audio.addEventListener('pause', sendStatus);
-audio.addEventListener('loadedmetadata', sendStatus);
+audio.addEventListener('loadedmetadata', () => {
+    sendStatus();
+    console.log('Audio metadata loaded, duration:', audio.duration);
+});
+audio.addEventListener('canplay', () => {
+    sendStatus();
+    console.log('Audio can play, duration:', audio.duration);
+});
 
 audio.addEventListener('ended', () => {
     sendStatus();
