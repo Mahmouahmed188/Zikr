@@ -303,6 +303,57 @@ class QuranAPIService {
     return uniqueReciters;
   }
 
+  getAvailableSurahsForReciter(reciterId: number): number[] {
+    this.ensureInitialized();
+
+    const reciter = this.getReciterById(reciterId);
+    if (!reciter || !reciter.moshaf || reciter.moshaf.length === 0) {
+      return [];
+    }
+
+    const availableSurahs = new Set<number>();
+
+    for (const moshaf of reciter.moshaf) {
+      if (moshaf.surah_list) {
+        if (moshaf.surah_list.includes(',')) {
+          const parts = moshaf.surah_list.split(',');
+          for (const part of parts) {
+            const trimmed = part.trim();
+            if (trimmed.includes('-')) {
+              const [start, end] = trimmed.split('-').map(Number);
+              for (let i = start; i <= end; i++) {
+                availableSurahs.add(i);
+              }
+            } else {
+              const surahId = parseInt(trimmed, 10);
+              if (!isNaN(surahId)) {
+                availableSurahs.add(surahId);
+              }
+            }
+          }
+        } else {
+          const surahId = parseInt(moshaf.surah_list.trim(), 10);
+          if (!isNaN(surahId)) {
+            availableSurahs.add(surahId);
+          }
+        }
+      }
+
+      if (moshaf.surahs && Array.isArray(moshaf.surahs)) {
+        moshaf.surahs.forEach((surahId: number) => {
+          availableSurahs.add(surahId);
+        });
+      }
+    }
+
+    return Array.from(availableSurahs).sort((a, b) => a - b);
+  }
+
+  isSurahAvailableForReciter(reciterId: number, surahId: number): boolean {
+    const availableSurahs = this.getAvailableSurahsForReciter(reciterId);
+    return availableSurahs.includes(surahId);
+  }
+
   clearCache(): void {
     this.surahCache.clear();
     this.reciterCache.clear();

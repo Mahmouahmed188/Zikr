@@ -80,6 +80,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     // Data
     const [reciters, setReciters] = useState<Reciter[]>([]);
     const [surahs, setSurahs] = useState<Surah[]>([]);
+    const [_availableSurahs, setAvailableSurahs] = useState<Surah[]>([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
     const [apiService, setApiService] = useState<QuranAPIService | null>(null);
 
@@ -182,11 +183,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                     // Auto-play next surah
                     const reciter = currentReciterRef.current;
                     const surahsList = surahs;
-                    if (reciter && surahsList.length > 0) {
-                        const currentIndex = surahsList.findIndex(s => s.id === currentSurahRef.current?.id);
-                        if (currentIndex < surahsList.length - 1) {
-                            const nextSurah = surahsList[currentIndex + 1];
-                            // Use setTimeout to avoid state update during render
+                    if (reciter && apiService && surahsList.length > 0) {
+                        const availableSurahsForReciter = apiService.getAvailableSurahsForReciter(reciter.id);
+                        const availableSurahsList = surahsList.filter(s => availableSurahsForReciter.includes(s.id));
+                        const currentIndex = availableSurahsList.findIndex(s => s.id === currentSurahRef.current?.id);
+                        if (currentIndex < availableSurahsList.length - 1) {
+                            const nextSurah = availableSurahsList[currentIndex + 1];
                             setTimeout(() => playSurah(nextSurah), 100);
                         }
                     }
@@ -264,6 +266,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         saveToStorage(STORAGE_KEYS.LAST_VOLUME, volume);
     }, [volume, sendToOffscreen]);
 
+    // Update available surahs when reciter changes
+    useEffect(() => {
+        if (currentReciter && apiService && surahs.length > 0) {
+            const availableSurahIds = apiService.getAvailableSurahsForReciter(currentReciter.id);
+            const filteredAvailableSurahs = surahs.filter(s => availableSurahIds.includes(s.id));
+            setAvailableSurahs(filteredAvailableSurahs);
+        }
+    }, [currentReciter, apiService, surahs]);
+
     // Refresh data from API
     const refreshData = useCallback(async () => {
         if (!apiService) return;
@@ -302,6 +313,22 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
+            if (!apiService.isSurahAvailableForReciter(reciter.id, surah.id)) {
+                const availableSurahs = apiService.getAvailableSurahsForReciter(reciter.id);
+                if (availableSurahs.length > 0) {
+                    const firstAvailableId = availableSurahs[0];
+                    const firstAvailableSurah = surahs.find(s => s.id === firstAvailableId);
+                    if (firstAvailableSurah) {
+                        playSurah(firstAvailableSurah);
+                        setIsLoading(false);
+                        return;
+                    }
+                }
+                setError(ERROR_KEYS.SURAH_NOT_AVAILABLE);
+                setIsLoading(false);
+                return;
+            }
+
             const audioUrl = apiService.getSurahAudioUrl(reciter.id, surah.id);
             
             if (!audioUrl) {
@@ -321,7 +348,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [apiService, sendToOffscreen]);
+    }, [apiService, sendToOffscreen, surahs]);
 
     const play = useCallback(() => {
         // Check if we have something to play
@@ -397,35 +424,62 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const setReciter = useCallback(async (reciter: Reciter) => {
         await saveToStorage(STORAGE_KEYS.CURRENT_RECITER, reciter);
         setCurrentReciter(reciter);
-        
-        // If we have a current surah loaded, reload it with the new reciter
+
+        if (!apiService) return;
+
+        const availableSurahIds = apiService.getAvailableSurahsForReciter(reciter.id);
+        const filteredAvailableSurahs = surahs.filter(s => availableSurahIds.includes(s.id));
+        setAvailableSurahs(filteredAvailableSurahs);
+
+        if (filteredAvailableSurahs.length === 0) {
+            console.warn('Reciter has no available surahs');
+            return;
+        }
+
         const surahToPlay = currentSurahRef.current;
-        if (surahToPlay) {
+        const isCurrentSurahAvailable = surahToPlay && availableSurahIds.includes(surahToPlay.id);
+
+        if (isCurrentSurahAvailable) {
             setTimeout(() => {
                 playSurah(surahToPlay);
             }, 0);
+        } else {
+            const firstAvailableSurah = filteredAvailableSurahs[0];
+            setTimeout(() => {
+                playSurah(firstAvailableSurah);
+            }, 0);
         }
-    }, [playSurah]);
+    }, [playSurah, apiService, surahs]);
 
     const playNext = useCallback(() => {
-        if (!currentSurah || surahs.length === 0) return;
-        
-        const currentIndex = surahs.findIndex(s => s.id === currentSurah.id);
-        if (currentIndex < surahs.length - 1) {
-            const nextSurah = surahs[currentIndex + 1];
+        if (!currentSurah || !currentReciter || !apiService || surahs.length === 0) return;
+
+        const availableSurahsForReciter = apiService.getAvailableSurahsForReciter(currentReciter.id);
+        const availableSurahsList = surahs.filter(s => availableSurahsForReciter.includes(s.id));
+
+        if (availableSurahsList.length === 0) return;
+
+        const currentIndex = availableSurahsList.findIndex(s => s.id === currentSurah.id);
+        if (currentIndex < availableSurahsList.length - 1) {
+            const nextSurah = availableSurahsList[currentIndex + 1];
             playSurah(nextSurah);
         }
-    }, [currentSurah, surahs, playSurah]);
+    }, [currentSurah, currentReciter, surahs, playSurah, apiService]);
 
     const playPrevious = useCallback(() => {
-        if (!currentSurah || surahs.length === 0) return;
-        
-        const currentIndex = surahs.findIndex(s => s.id === currentSurah.id);
+        if (!currentSurah || !currentReciter || !apiService || surahs.length === 0) return;
+
+        const availableSurahsForReciter = apiService.getAvailableSurahsForReciter(currentReciter.id);
+        const availableSurahsList = surahs.filter(s => availableSurahsForReciter.includes(s.id));
+
+        if (availableSurahsList.length === 0) return;
+
+        const currentIndex = availableSurahsList.findIndex(s => s.id === currentSurah.id);
         if (currentIndex > 0) {
-            const prevSurah = surahs[currentIndex - 1];
+            const prevSurah = availableSurahsList[currentIndex - 1];
             playSurah(prevSurah);
         }
-    }, [currentSurah, surahs, playSurah]);
+    }, [currentSurah, currentReciter, surahs, playSurah, apiService]);
 
     const clearError = useCallback(() => {
         setError(null);
