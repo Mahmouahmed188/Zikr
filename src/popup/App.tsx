@@ -178,7 +178,15 @@ const App: React.FC = () => {
     return (
         <div className="w-[500px] h-[570px] flex flex-col select-none relative overflow-hidden font-sans mx-auto"
             style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-
+            <div
+                className="absolute inset-0 z-0 pointer-events-none opacity-[0.05] dark:opacity-[0.1]"
+                style={{
+                    backgroundImage: `url('/bg1.svg')`,
+                    backgroundRepeat: 'repeat',
+                    maskImage: 'radial-gradient(circle, white 20%, transparent 80%)',
+                    WebkitMaskImage: 'radial-gradient(circle, white 20%, transparent 80%)',
+                }}
+            />
             {/* Error Toast */}
             {playerError && (
                 <div className="absolute top-4 left-4 right-4 z-50 p-3 rounded-xl flex items-center justify-between"
@@ -311,9 +319,13 @@ const App: React.FC = () => {
                         </div>
 
                         {/* Main Surah Card */}
-                        <div className="relative glass rounded-[32px] px-6 py-5 flex flex-col items-center overflow-hidden border shadow-glass group gold-glow-hover transition-all duration-700 flex-1"
-                            style={{ borderColor: 'var(--glass-border)' }}>
-
+                        <div className="relative rounded-[32px] px-6 py-5 flex flex-col items-center overflow-hidden flex-1
+                bg-gradient-to-br from-white/[0.1] via-transparent to-black/[0.1] 
+                backdrop-blur-2xl
+                border border-white/[0.08]
+                shadow-[inset_0_0.5px_0_0_rgba(255,255,255,0.2),_0_8px_32px_0_rgba(0,0,0,0.3)] 
+                group gold-glow-hover transition-all duration-700"
+                        >
                             {isDataLoading ? (
                                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                                     <Loader2 size={40} className="animate-spin" style={{ color: '#C5A059' }} />
@@ -378,7 +390,7 @@ const App: React.FC = () => {
 
                                     {/* Progress Bar */}
                                     {currentSurah && (
-                                        <div className="w-full mt-2 mb-3">
+                                        <div className="w-full mt-2 mb-3" dir="ltr">
                                             {duration > 0 ? (
                                                 <>
                                                     <div
@@ -432,7 +444,7 @@ const App: React.FC = () => {
                                     )}
 
                                     {/* Player Controls */}
-                                    <div className="w-full flex items-center justify-between mt-4">
+                                    <div className="w-full flex items-center justify-between mt-4" dir="ltr">
                                         {/* Volume Control */}
                                         <div className="flex-1">
                                             <VolumeControl
