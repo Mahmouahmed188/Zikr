@@ -65,6 +65,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const currentReciterRef = useRef<Reciter | null>(null);
     const offscreenReadyRef = useRef(false);
     const audioRefReadyRef = useRef(false);  // Track if audio element has src loaded
+    const loadingTimeoutRef = useRef<number | null>(null);
     
     // State
     const [currentSurah, setCurrentSurah] = useState<Surah | null>(null);
@@ -177,6 +178,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                     setIsLooping(isLooping);
                     // Track if audio has a source loaded
                     audioRefReadyRef.current = !!currentUrl;
+                } else if (message.type === 'AUDIO_READY') {
+                    setIsLoading(false);
                 } else if (message.type === 'AUDIO_ENDED') {
                     setIsPlaying(false);
                     setCurrentTime(0);
@@ -196,6 +199,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
                     console.error('Audio error from offscreen:', message.payload);
                     setError(message.payload?.error || 'Audio playback failed');
                     setIsPlaying(false);
+                    setIsLoading(false);
                 }
             }
         };
@@ -210,6 +214,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         return () => {
             chrome.runtime.onMessage.removeListener(handleMessage);
             clearTimeout(fetchInitialStatus);
+            if (loadingTimeoutRef.current) {
+                clearTimeout(loadingTimeoutRef.current);
+            }
         };
     }, [sendToOffscreen, surahs]);
 
@@ -302,6 +309,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Play surah
     const playSurah = useCallback(async (surah: Surah) => {
+        // Clear any existing loading timeout
+        if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+            loadingTimeoutRef.current = null;
+        }
+
         setIsLoading(true);
         setError(null);
 
@@ -342,10 +355,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             setIsPlaying(true);
             setCurrentSurah(surah);
             saveToStorage(STORAGE_KEYS.LAST_SURAH, surah.id);
+
+            // Safety timeout to ensure loading state doesn't get stuck
+            loadingTimeoutRef.current = setTimeout(() => {
+                setIsLoading(false);
+            }, 10000);
         } catch (err) {
             console.error('Failed to load surah:', err);
             setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
-        } finally {
             setIsLoading(false);
         }
     }, [apiService, sendToOffscreen, surahs]);
@@ -367,6 +384,12 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         }
         
         // Otherwise, load the audio URL first (first play scenario)
+        // Clear any existing loading timeout
+        if (loadingTimeoutRef.current) {
+            clearTimeout(loadingTimeoutRef.current);
+            loadingTimeoutRef.current = null;
+        }
+
         setIsLoading(true);
         setError(null);
         
@@ -382,10 +405,14 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             // Play with URL (this sets src and plays in offscreen)
             sendToOffscreen('PLAY', { url: audioUrl });
             setIsPlaying(true);
+
+            // Safety timeout to ensure loading state doesn't get stuck
+            loadingTimeoutRef.current = window.setTimeout(() => {
+                setIsLoading(false);
+            }, 10000);
         } catch (err) {
             console.error('Failed to load audio:', err);
             setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
-        } finally {
             setIsLoading(false);
         }
     }, [isPlaying, sendToOffscreen, apiService]);

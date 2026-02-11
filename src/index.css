@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Scheherazade+New:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -93,6 +95,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
+}
+
+@layer utilities {
+  [lang="ar"], .arabic-text {
+    font-family: 'Scheherazade New', 'Amiri', serif;
+  }
 }
 
 @layer utilities {
@@ -216,10 +224,17 @@ body {
 
 @layer base {
   @font-face {
-    font-family: 'Amiri';
+    font-family: 'Scheherazade New';
     font-style: normal;
     font-weight: 400;
-    src: url(https://fonts.gstatic.com/s/amiri/v27/J7aRnpd8CGxBHqUpvrIw74NL.woff2) format('woff2');
+    src: url(https://fonts.gstatic.com/s/scheherazadenew/v11/wWYQyQx6l5pGT8ZzDN-YdDng4X8.woff2) format('woff2');
+    unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
+  }
+  @font-face {
+    font-family: 'Scheherazade New';
+    font-style: normal;
+    font-weight: 700;
+    src: url(https://fonts.gstatic.com/s/scheherazadenew/v11/wWYUyQx6l5pGT8ZzDN-YdDngqgY.woff2) format('woff2');
     unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
   }
 }

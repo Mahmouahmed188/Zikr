@@ -30,8 +30,8 @@ export default {
         },
         fontFamily: {
           sans: ['Inter', 'sans-serif'],
-          serif: ['Amiri', 'serif'], // Arabic font
-          amiri: ['Amiri', 'serif'],
+          serif: ['Scheherazade New', 'serif'], // Arabic font
+          amiri: ['Scheherazade New', 'serif'],
         },
         boxShadow: {
           'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',

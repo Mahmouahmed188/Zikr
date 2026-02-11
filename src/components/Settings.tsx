@@ -20,20 +20,20 @@ const Settings: React.FC<SettingsProps> = ({
     const { language, setLanguage } = useLanguage();
 
     const themeOptions: { value: Theme; label: string; icon: React.ReactNode }[] = [
-        { 
-            value: 'light', 
-            label: t('settings.theme.light'), 
-            icon: <Sun size={18} className="text-orange-500" /> 
+        {
+            value: 'light',
+            label: t('settings.theme.light'),
+            icon: <Sun size={18} className="text-orange-500" />
         },
-        { 
-            value: 'dark', 
-            label: t('settings.theme.dark'), 
-            icon: <Moon size={18} className="text-indigo-400" /> 
+        {
+            value: 'dark',
+            label: t('settings.theme.dark'),
+            icon: <Moon size={18} className="text-indigo-400" />
         },
-        { 
-            value: 'system', 
-            label: t('settings.theme.system'), 
-            icon: <Monitor size={18} className="text-blue-500" /> 
+        {
+            value: 'system',
+            label: t('settings.theme.system'),
+            icon: <Monitor size={18} className="text-blue-500" />
         },
     ];
 
@@ -44,7 +44,7 @@ const Settings: React.FC<SettingsProps> = ({
 
     return (
         <div className="flex flex-col h-full animate-fade-in overflow-y-auto custom-scrollbar"
-             style={{ backgroundColor: 'var(--bg-primary)' }}>
+            style={{ backgroundColor: 'var(--bg-primary)' }}>
             <div className="p-6">
                 {/* Header with Back Button */}
                 {onBack && (
@@ -68,7 +68,7 @@ const Settings: React.FC<SettingsProps> = ({
                     <button
                         onClick={onOpenReciters}
                         className="w-full flex items-center justify-between p-4 rounded-xl border transition-all group"
-                        style={{ 
+                        style={{
                             backgroundColor: 'var(--bg-card)',
                             borderColor: 'var(--border-color)',
                             boxShadow: 'var(--glass-shadow)'
@@ -82,12 +82,12 @@ const Settings: React.FC<SettingsProps> = ({
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                                 style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
+                                style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
                                 <User size={20} className="text-primary" />
                             </div>
                             <div className="text-left">
                                 <p className="text-sm font-medium transition-colors"
-                                   style={{ color: 'var(--text-primary)' }}>
+                                    style={{ color: 'var(--text-primary)' }}>
                                     {currentReciterName}
                                 </p>
                                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
@@ -95,8 +95,8 @@ const Settings: React.FC<SettingsProps> = ({
                                 </p>
                             </div>
                         </div>
-                        <ChevronRight size={20} style={{ color: 'var(--text-muted)' }} 
-                                      className="group-hover:translate-x-1 transition-transform" />
+                        <ChevronRight size={20} style={{ color: 'var(--text-muted)' }}
+                            className="group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
 
@@ -106,7 +106,7 @@ const Settings: React.FC<SettingsProps> = ({
                         style={{ color: 'var(--text-muted)' }}>
                         {t('settings.appearance')}
                     </h2>
-                    
+
                     {/* Theme Options */}
                     <div className="grid grid-cols-3 gap-2">
                         {themeOptions.map((option) => (
@@ -115,27 +115,27 @@ const Settings: React.FC<SettingsProps> = ({
                                 onClick={() => setTheme(option.value)}
                                 className="flex flex-col items-center gap-2 p-3 rounded-xl border transition-all duration-300"
                                 style={{
-                                    backgroundColor: theme === option.value 
-                                        ? 'var(--bg-surface)' 
+                                    backgroundColor: theme === option.value
+                                        ? 'var(--bg-surface)'
                                         : 'var(--bg-card)',
-                                    borderColor: theme === option.value 
-                                        ? 'var(--primary)' 
+                                    borderColor: theme === option.value
+                                        ? 'var(--primary)'
                                         : 'var(--border-color)',
-                                    boxShadow: theme === option.value 
-                                        ? 'var(--shadow-gold)' 
+                                    boxShadow: theme === option.value
+                                        ? 'var(--shadow-gold)'
                                         : 'var(--glass-shadow)'
                                 }}
                             >
                                 <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                                     style={{ 
-                                         backgroundColor: theme === option.value 
-                                            ? 'rgba(197, 160, 89, 0.15)' 
+                                    style={{
+                                        backgroundColor: theme === option.value
+                                            ? 'rgba(197, 160, 89, 0.15)'
                                             : 'rgba(0, 0, 0, 0.05)'
-                                     }}>
+                                    }}>
                                     {option.icon}
                                 </div>
-                                <span className="text-xs font-medium" 
-                                      style={{ color: 'var(--text-primary)' }}>
+                                <span className="text-xs font-bold"
+                                    style={{ color: 'var(--text-primary)' }}>
                                     {option.label}
                                 </span>
                                 {theme === option.value && (
@@ -147,14 +147,14 @@ const Settings: React.FC<SettingsProps> = ({
 
                     {/* Current Theme Display */}
                     <div className="mt-4 p-3 rounded-xl flex items-center justify-between"
-                         style={{ 
-                             backgroundColor: 'var(--bg-card)',
-                             borderColor: 'var(--border-color)',
-                             border: '1px solid var(--border-color)'
-                         }}>
+                        style={{
+                            backgroundColor: 'var(--bg-card)',
+                            borderColor: 'var(--border-color)',
+                            border: '1px solid var(--border-color)'
+                        }}>
                         <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full flex items-center justify-center"
-                                 style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
+                                style={{ backgroundColor: 'rgba(197, 160, 89, 0.1)' }}>
                                 {resolvedTheme === 'dark' ? (
                                     <Moon size={16} className="text-primary" />
                                 ) : (
@@ -170,9 +170,8 @@ const Settings: React.FC<SettingsProps> = ({
                                 </p>
                             </div>
                         </div>
-                        <div className={`w-2 h-2 rounded-full ${
-                            resolvedTheme === 'dark' ? 'bg-indigo-400' : 'bg-orange-400'
-                        }`} />
+                        <div className={`w-2 h-2 rounded-full ${resolvedTheme === 'dark' ? 'bg-indigo-400' : 'bg-orange-400'
+                            }`} />
                     </div>
                 </div>
 
@@ -185,7 +184,7 @@ const Settings: React.FC<SettingsProps> = ({
                     <button
                         onClick={handleLanguageToggle}
                         className="w-full flex items-center justify-between p-4 rounded-xl border transition-all group"
-                        style={{ 
+                        style={{
                             backgroundColor: 'var(--bg-card)',
                             borderColor: 'var(--border-color)',
                             boxShadow: 'var(--glass-shadow)'
@@ -199,7 +198,7 @@ const Settings: React.FC<SettingsProps> = ({
                     >
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                                 style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                                style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
                                 <Globe size={20} className="text-blue-500" />
                             </div>
                             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -207,10 +206,10 @@ const Settings: React.FC<SettingsProps> = ({
                             </span>
                         </div>
                         <span className="text-xs font-bold px-2 py-1 rounded-md"
-                              style={{ 
-                                  color: 'var(--text-muted)',
-                                  backgroundColor: 'var(--bg-surface)'
-                              }}>
+                            style={{
+                                color: 'var(--text-muted)',
+                                backgroundColor: 'var(--bg-surface)'
+                            }}>
                             {language.toUpperCase()}
                         </span>
                     </button>

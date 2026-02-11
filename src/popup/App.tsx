@@ -306,7 +306,7 @@ const App: React.FC = () => {
                                                         {surah.englishName || surah.name}
                                                     </span>
                                                 </div>
-                                                <span className="font-amiri opacity-60 text-lg">{surah.name}</span>
+                                                <span className="opacity-60 text-lg">{surah.name}</span>
                                             </button>
                                         ))
                                     ) : (
@@ -349,14 +349,14 @@ const App: React.FC = () => {
                                     {/* Surah Display */}
                                     {currentSurah ? (
                                         <>
-                                            <div className="text-6xl font-amiri mb-3 gold-text drop-shadow-lg scale-100 group-hover:scale-110 transition-transform duration-700 ease-in-out">
+                                            <div className="text-6xl mb-3 gold-text drop-shadow-lg scale-100 group-hover:scale-110 transition-transform duration-700 ease-in-out">
                                                 {currentSurah.script || currentSurah.name.charAt(0)}
                                             </div>
 
                                             <h2 className="text-xl font-bold gold-text tracking-wide mb-1.5 uppercase text-center">
                                                 {currentSurah.englishName || currentSurah.name}
                                             </h2>
-                                            <h3 className="text-base font-amiri mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                                            <h3 className="text-base font-bold mb-2" style={{ color: 'var(--text-tertiary)' }}>
                                                 {currentSurah.name}
                                             </h3>
 
@@ -498,12 +498,12 @@ const App: React.FC = () => {
                                             className="flex flex-col items-end flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                                             onClick={() => setCurrentView('reciters')}
                                         >
-                                            <span className="text-[7px] uppercase tracking-widest mb-0.5" style={{ color: 'var(--text-muted)' }}>
+                                            <span className="text-[12px] font-bold uppercase tracking-widest mb-0.5" style={{ color: 'var(--text-muted)' }}>
                                                 {t('player.reciterLabel')}
                                             </span>
                                             <div className="flex items-center gap-1.5 p-0.5 pl-2 pr-0.5 rounded-full border"
                                                 style={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)' }}>
-                                                <span className="font-amiri text-[11px] opacity-90 truncate max-w-[80px] sm:max-w-[120px] block">
+                                                <span className="text-[11px] opacity-90 truncate max-w-[80px] sm:max-w-[120px] block">
                                                     {currentReciter?.name || t('common.select')}
                                                 </span>
                                                 <div className="w-5 h-5 rounded-full border border-primary/30 flex items-center justify-center text-[8px] font-bold"

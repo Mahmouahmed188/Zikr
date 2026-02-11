@@ -183,9 +183,28 @@ audio.addEventListener('loadedmetadata', () => {
     sendStatus();
     console.log('Audio metadata loaded, duration:', audio.duration);
 });
-audio.addEventListener('canplay', () => {
+ audio.addEventListener('canplay', () => {
     sendStatus();
     console.log('Audio can play, duration:', audio.duration);
+    try {
+        chrome.runtime.sendMessage({ target: 'popup', type: 'AUDIO_READY' }).catch(() => {
+            // Popup might be closed
+        });
+    } catch (e) {
+        // Ignore errors
+    }
+});
+
+audio.addEventListener('canplaythrough', () => {
+    sendStatus();
+    console.log('Audio can play through, duration:', audio.duration);
+    try {
+        chrome.runtime.sendMessage({ target: 'popup', type: 'AUDIO_READY' }).catch(() => {
+            // Popup might be closed
+        });
+    } catch (e) {
+        // Ignore errors
+    }
 });
 
 audio.addEventListener('ended', () => {

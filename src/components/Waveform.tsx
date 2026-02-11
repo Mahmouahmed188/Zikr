@@ -3,7 +3,7 @@ import { usePlayer } from '../context/PlayerContext';
 import QuranAPIService from '../services/quranAPIService';
 
 const Waveform: React.FC = () => {
-    const { isPlaying, currentSurah, currentReciter } = usePlayer();
+    const { isPlaying, currentSurah, currentReciter, isLoading } = usePlayer();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const animationRef = useRef<number>();
     const audioContextRef = useRef<AudioContext | null>(null);
@@ -269,7 +269,7 @@ const Waveform: React.FC = () => {
     return (
         <div className="w-full px-0 my-4">
             <div
-                className="flex items-center justify-center h-16 w-full opacity-80"
+                className="flex items-center justify-center h-16 w-full opacity-80 relative"
                 style={{
                     filter: 'drop-shadow(0 0 8px rgba(197, 160, 89, 0.6)) drop-shadow(0 0 12px rgba(197, 160, 89, 0.4))',
                 }}
@@ -277,9 +277,33 @@ const Waveform: React.FC = () => {
                 <canvas
                     ref={canvasRef}
                     className="w-full h-full"
-                    style={{ display: 'block' }}
+                    style={{ 
+                        display: 'block',
+                        opacity: isLoading ? 0 : 1,
+                        transition: 'opacity 0.3s ease'
+                    }}
                 />
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-full h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--bg-surface)' }}>
+                            <div 
+                                className="h-full rounded-full"
+                                style={{
+                                    width: '40%',
+                                    backgroundColor: '#C5A059',
+                                    animation: 'loadingShimmer 1.5s ease-in-out infinite',
+                                }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
+            <style>{`
+                @keyframes loadingShimmer {
+                    0% { transform: translateX(-100%); }
+                    100% { transform: translateX(250%); }
+                }
+            `}</style>
         </div>
     );
 };
