@@ -269,7 +269,7 @@ const App: React.FC = () => {
                                     )}
 
                                     {/* Waveform Visualization */}
-                                    <Waveform isPlaying={isPlaying} />
+                                    <Waveform />
 
                                     {/* Progress Bar */}
                                     {currentSurah && duration > 0 && (
