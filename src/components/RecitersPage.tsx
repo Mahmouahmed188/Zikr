@@ -313,7 +313,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                                 className={`text-xs py-2 px-3 rounded-lg capitalize transition-colors ${
                                                     filters.recitationType === type
                                                         ? 'bg-primary/20 text-primary font-medium'
-                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                        : 'bg-white/20 dark:bg-white/10 text-secondary'
                                                 }`}
                                                 style={{
                                                     color: filters.recitationType === type ? '#C5A059' : 'var(--text-secondary)'
@@ -360,7 +360,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                                 className={`text-xs py-2 px-3 rounded-lg capitalize transition-colors ${
                                                     filters.completionLevel === level
                                                         ? 'bg-primary/20 text-primary font-medium'
-                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                        : 'bg-white/20 dark:bg-white/10 text-secondary'
                                                 }`}
                                                 style={{
                                                     color: filters.completionLevel === level ? '#C5A059' : 'var(--text-secondary)'
@@ -391,7 +391,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                                 className={`text-xs py-2 px-3 rounded-lg transition-colors ${
                                                     filters.sortBy === value
                                                         ? 'bg-primary/20 text-primary font-medium'
-                                                        : 'bg-white/5 dark:bg-white/5 text-secondary'
+                                                        : 'bg-white/20 dark:bg-white/10 text-secondary'
                                                 }`}
                                                 style={{
                                                     color: filters.sortBy === value ? '#C5A059' : 'var(--text-secondary)'
@@ -468,7 +468,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                 onClick={() => handleSelectReciter(reciter)}
                                 className={`w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all duration-200 ${currentReciter?.id === reciter.id
                                     ? 'border'
-                                    : 'border border-transparent hover:bg-white/5 dark:hover:bg-white/5'
+                                    : 'border border-transparent hover:bg-white/30 dark:hover:bg-white/10'
                                     }`}
                                 style={{
                                     backgroundColor: currentReciter?.id === reciter.id

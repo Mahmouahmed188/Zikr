@@ -183,8 +183,8 @@ const App: React.FC = () => {
                 style={{
                     backgroundImage: `url('/bg1.svg')`,
                     backgroundRepeat: 'repeat',
-                    maskImage: 'radial-gradient(circle, white 20%, transparent 80%)',
-                    WebkitMaskImage: 'radial-gradient(circle, white 20%, transparent 80%)',
+                    maskImage: 'radial-gradient(circle, white 20%, transparent 95%)',
+                    WebkitMaskImage: 'radial-gradient(circle, white 20%, transparent 95%)',
                 }}
             />
             {/* Error Toast */}
