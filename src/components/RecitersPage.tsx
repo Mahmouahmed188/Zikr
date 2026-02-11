@@ -8,7 +8,7 @@ import {
   normalizeEnglish,
   detectLanguage,
   calculateSimilarity
-} from '../services/textNormalization';
+} from '../utils/textNormalization';
 
 interface RecitersPageProps {
     onClose: () => void;

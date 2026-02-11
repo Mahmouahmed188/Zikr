@@ -1,19 +1,27 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Loader2, X, BookOpen, Music } from 'lucide-react';
-import { unifiedSearchService, UnifiedSearchResult } from '../services/unifiedSearch';
-import { searchRanker } from '../services/searchRanking';
+import QuranAPIService from '../services/quranAPIService';
+import { SurahWithResources, ReciterWithResources } from '../types';
 
 interface UnifiedSearchComponentProps {
-  onResultSelect?: (result: UnifiedSearchResult) => void;
+  onSurahSelect?: (surah: SurahWithResources) => void;
+  onReciterSelect?: (reciter: ReciterWithResources) => void;
   placeholder?: string;
   showImages?: boolean;
   maxResults?: number;
   className?: string;
 }
 
+interface SearchResult {
+  type: 'surah' | 'reciter';
+  data: SurahWithResources | ReciterWithResources;
+  matchScore: number;
+}
+
 const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
-  onResultSelect,
+  onSurahSelect,
+  onReciterSelect,
   placeholder,
   showImages = true,
   maxResults = 10,
@@ -21,35 +29,40 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
 }) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<UnifiedSearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [apiInstance, setApiInstance] = useState<QuranAPIService | null>(null);
 
-  const debouncedQuery = useMemo(() => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    return (value: string) => {
-      if (timeout) clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        performSearch(value);
-      }, 300);
+  useEffect(() => {
+    const initAPI = async () => {
+      try {
+        const api = new QuranAPIService();
+        await api.initialize();
+        setApiInstance(api);
+      } catch (error) {
+        console.error('Failed to initialize API:', error);
+      }
     };
+    
+    initAPI();
   }, []);
 
   useEffect(() => {
-    if (query.trim().length >= 1) {
-      debouncedQuery(query);
-    } else {
-      setResults([]);
-      setShowResults(false);
-    }
+    const timeoutId = setTimeout(() => {
+      if (query.trim().length >= 1 && apiInstance) {
+        performSearch(query);
+      } else {
+        setResults([]);
+        setShowResults(false);
+      }
+    }, 300);
 
-    return () => {
-      debouncedQuery('');
-    };
-  }, [query, debouncedQuery]);
+    return () => clearTimeout(timeoutId);
+  }, [query, apiInstance]);
 
   const performSearch = async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() || !apiInstance) {
       setResults([]);
       return;
     }
@@ -57,27 +70,31 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
     setIsSearching(true);
     
     try {
-      const searchResults = unifiedSearchService.search(searchQuery, {
+      const searchResults = apiInstance.search(searchQuery, {
         limit: maxResults,
-        minScore: 0.3,
-        includePartial: true,
-        includeInitials: true,
-        bilingual: true,
-        includeImages: showImages,
-        imageLimit: 2,
-        includeRelated: true
+        minScore: 30
       });
 
-      const rankedResults = searchRanker.rank(searchResults, searchQuery, {
-        boostExactMatches: true,
-        boostReciters: 0.1,
-        boostQuranTerms: 0.08,
-        boostSurahs: 0.05,
-        penalizeFuzzy: 0.15,
-        languageWeight: 0.1
+      const combinedResults: SearchResult[] = [];
+
+      searchResults.suwar.forEach((surah: SurahWithResources) => {
+        combinedResults.push({
+          type: 'surah',
+          data: surah,
+          matchScore: surah.matchScore || 0
+        });
       });
 
-      setResults(rankedResults);
+      searchResults.reciters.forEach((reciter: ReciterWithResources) => {
+        combinedResults.push({
+          type: 'reciter',
+          data: reciter,
+          matchScore: reciter.matchScore || 0
+        });
+      });
+
+      combinedResults.sort((a, b) => b.matchScore - a.matchScore);
+      setResults(combinedResults.slice(0, maxResults));
       setShowResults(true);
     } catch (error) {
       console.error('Search failed:', error);
@@ -87,10 +104,14 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
     }
   };
 
-  const handleResultClick = (result: UnifiedSearchResult) => {
-    setQuery(result.title.en);
+  const handleResultClick = (result: SearchResult) => {
     setShowResults(false);
-    onResultSelect?.(result);
+    
+    if (result.type === 'surah') {
+      onSurahSelect?.(result.data as SurahWithResources);
+    } else {
+      onReciterSelect?.(result.data as ReciterWithResources);
+    }
   };
 
   const clearSearch = () => {
@@ -99,12 +120,10 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
     setShowResults(false);
   };
 
-  const getResultIcon = (type: UnifiedSearchResult['type']) => {
+  const getResultIcon = (type: 'surah' | 'reciter') => {
     switch (type) {
       case 'reciter':
         return <Music size={16} className="text-primary" />;
-      case 'quran-term':
-        return <BookOpen size={16} className="text-amber-500" />;
       case 'surah':
         return <BookOpen size={16} className="text-emerald-500" />;
       default:
@@ -112,26 +131,45 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
     }
   };
 
-  const getMatchTypeBadge = (matchType: UnifiedSearchResult['matchType']) => {
-    const badges = {
-      exact: { label: 'Exact', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' },
-      variant: { label: 'Variant', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-      partial: { label: 'Partial', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-      fuzzy: { label: 'Similar', className: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' },
-      related: { label: 'Related', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' }
-    };
-    
-    const badge = badges[matchType];
-    return (
-      <span className={`text-xs px-2 py-0.5 rounded-full ${badge.className}`}>
-        {badge.label}
-      </span>
-    );
+  const getMatchTypeBadge = (matchScore: number) => {
+    if (matchScore >= 95) return { label: 'Exact', className: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' };
+    if (matchScore >= 80) return { label: 'Very Good', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' };
+    if (matchScore >= 60) return { label: 'Good', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' };
+    return { label: 'Partial', className: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300' };
+  };
+
+  const getResultTitle = (result: SearchResult) => {
+    if (result.type === 'surah') {
+      const surah = result.data as SurahWithResources;
+      return surah.name_en || surah.name;
+    } else {
+      const reciter = result.data as ReciterWithResources;
+      return reciter.name_en || reciter.name;
+    }
+  };
+
+  const getResultSubtitle = (result: SearchResult) => {
+    if (result.type === 'surah') {
+      const surah = result.data as SurahWithResources;
+      return surah.name_ar || surah.arabicName || surah.name;
+    } else {
+      const reciter = result.data as ReciterWithResources;
+      return reciter.name_ar || reciter.arabicName || reciter.name;
+    }
+  };
+
+  const getResultImageUrl = (result: SearchResult) => {
+    if (result.type === 'surah') {
+      const surah = result.data as SurahWithResources;
+      return surah.imageUrl;
+    } else {
+      const reciter = result.data as ReciterWithResources;
+      return reciter.imageUrl;
+    }
   };
 
   return (
     <div className={`relative ${className}`}>
-      {/* Search Input */}
       <div className="relative">
         <Search 
           className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" 
@@ -144,6 +182,7 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
           placeholder={placeholder || t('search.placeholder')}
           className="w-full h-11 pl-11 pr-10 rounded-xl theme-input text-sm"
           onFocus={() => results.length > 0 && setShowResults(true)}
+          disabled={!apiInstance}
         />
         {query && (
           <button
@@ -155,7 +194,6 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
         )}
       </div>
 
-      {/* Search Status */}
       {isSearching && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -165,67 +203,58 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
         </div>
       )}
 
-      {/* Search Results */}
       {!isSearching && showResults && results.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50 max-h-96 overflow-y-auto">
           <div className="p-3 border-b border-gray-200 dark:border-gray-700">
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              {t('search.resultsCount', { count: results.length })}
+              {results.length} {results.length === 1 ? 'result' : 'results'}
             </p>
           </div>
           
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {results.map((result) => (
+            {results.map((result, index) => (
               <button
-                key={result.id}
+                key={`${result.type}-${(result.data as any).id}-${index}`}
                 onClick={() => handleResultClick(result)}
                 className="w-full p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors text-left"
               >
                 <div className="flex items-start gap-3">
-                  {/* Icon */}
                   <div className="mt-0.5 flex-shrink-0">
                     {getResultIcon(result.type)}
                   </div>
 
-                  {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
-                        {result.title.en}
+                        {getResultTitle(result)}
                       </h4>
-                      {getMatchTypeBadge(result.matchType)}
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${getMatchTypeBadge(result.matchScore).className}`}>
+                        {getMatchTypeBadge(result.matchScore).label}
+                      </span>
                     </div>
                     
-                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate mb-2">
-                      {result.title.ar}
+                    <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                      {getResultSubtitle(result)}
                     </p>
 
-                    {result.description && (
-                      <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
-                        {result.description.en}
-                      </p>
-                    )}
-
-                    {/* Score indicator */}
                     <div className="flex items-center gap-2 mt-2">
                       <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-primary transition-all duration-300"
-                          style={{ width: `${result.relevanceScore * 100}%` }}
+                          style={{ width: `${result.matchScore}%` }}
                         />
                       </div>
                       <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {Math.round(result.relevanceScore * 100)}%
+                        {Math.round(result.matchScore)}%
                       </span>
                     </div>
                   </div>
 
-                  {/* Image thumbnail */}
-                  {showImages && result.images.length > 0 && (
+                  {showImages && getResultImageUrl(result) && (
                     <div className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
                       <img
-                        src={result.images[0].thumbnailUrl || result.images[0].url}
-                        alt={result.images[0].altText.en}
+                        src={getResultImageUrl(result)}
+                        alt={getResultTitle(result)}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -236,7 +265,6 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
             ))}
           </div>
 
-          {/* Footer */}
           <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
             <button
               onClick={() => setShowResults(false)}
@@ -248,7 +276,6 @@ const UnifiedSearchComponent: React.FC<UnifiedSearchComponentProps> = ({
         </div>
       )}
 
-      {/* No Results */}
       {!isSearching && showResults && query && results.length === 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6 z-50">
           <div className="text-center">

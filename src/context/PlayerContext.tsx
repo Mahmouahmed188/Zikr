@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef, ReactNode, useCallback } from 'react';
 import { Surah, Reciter } from '../types';
-import { getReciters, getSurahs, getAudioUrl } from '../services/quranApi';
+import QuranAPIService from '../services/quranAPIService';
 
 interface PlayerContextType {
     // State
@@ -76,6 +76,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     const [reciters, setReciters] = useState<Reciter[]>([]);
     const [surahs, setSurahs] = useState<Surah[]>([]);
     const [isDataLoading, setIsDataLoading] = useState(true);
+    const [apiService, setApiService] = useState<QuranAPIService | null>(null);
 
     // Helper to get storage
     const getStorage = () => {
@@ -111,24 +112,28 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         const initialize = async () => {
             setIsDataLoading(true);
             try {
-                // Load cached data first
-                const cachedReciters = await getFromStorage<Reciter[]>(STORAGE_KEYS.RECITERS);
-                const cachedSurahs = await getFromStorage<Surah[]>(STORAGE_KEYS.CURRENT_SURAHS);
+                const api = new QuranAPIService();
+                await api.initialize();
+                setApiService(api);
+
+                const fetchedReciters = api.getAllReciters();
+                const fetchedSurahs = api.getAllSurahs();
+
+                setReciters(fetchedReciters);
+                setSurahs(fetchedSurahs);
+
+                await saveToStorage(STORAGE_KEYS.RECITERS, fetchedReciters);
+                await saveToStorage(STORAGE_KEYS.CURRENT_SURAHS, fetchedSurahs);
+
                 const cachedReciter = await getFromStorage<Reciter>(STORAGE_KEYS.CURRENT_RECITER);
                 const cachedVolume = await getFromStorage<number>(STORAGE_KEYS.LAST_VOLUME);
                 const cachedLastSurah = await getFromStorage<number>(STORAGE_KEYS.LAST_SURAH);
 
-                if (cachedReciters) setReciters(cachedReciters);
-                if (cachedSurahs) setSurahs(cachedSurahs);
                 if (cachedReciter) setCurrentReciter(cachedReciter);
                 if (cachedVolume) setVolumeState(cachedVolume);
 
-                // Fetch fresh data from API
-                await refreshData();
-
-                // Restore last played surah if available
-                if (cachedLastSurah && cachedSurahs) {
-                    const lastSurah = cachedSurahs.find(s => s.id === cachedLastSurah);
+                if (cachedLastSurah && fetchedSurahs) {
+                    const lastSurah = fetchedSurahs.find(s => s.id === cachedLastSurah);
                     if (lastSurah) {
                         setCurrentSurah(lastSurah);
                     }
@@ -146,20 +151,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Refresh data from API
     const refreshData = useCallback(async () => {
+        if (!apiService) return;
+
         try {
-            const [fetchedReciters, fetchedSurahs] = await Promise.all([
-                getReciters('eng'),
-                getSurahs('eng'),
-            ]);
+            const fetchedReciters = apiService.getAllReciters();
+            const fetchedSurahs = apiService.getAllSurahs();
 
             setReciters(fetchedReciters);
             setSurahs(fetchedSurahs);
 
-            // Cache data
             await saveToStorage(STORAGE_KEYS.RECITERS, fetchedReciters);
             await saveToStorage(STORAGE_KEYS.CURRENT_SURAHS, fetchedSurahs);
 
-            // Set default reciter if none selected
             const currentReciterData = await getFromStorage<Reciter>(STORAGE_KEYS.CURRENT_RECITER);
             if (!currentReciterData && fetchedReciters.length > 0) {
                 setCurrentReciter(fetchedReciters[0]);
@@ -169,7 +172,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
             console.error('Failed to refresh data:', err);
             setError(ERROR_KEYS.FAILED_TO_FETCH);
         }
-    }, []);
+    }, [apiService]);
 
     // Initialize audio element
     useEffect(() => {
@@ -217,7 +220,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 
     // Play surah
     const playSurah = useCallback(async (surah: Surah) => {
-        if (!currentReciter) {
+        if (!currentReciter || !apiService) {
             setError(ERROR_KEYS.SELECT_RECITER_FIRST);
             return;
         }
@@ -226,7 +229,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         setError(null);
 
         try {
-            const audioUrl = await getAudioUrl(currentReciter.id, surah.id);
+            const audioUrl = apiService.getSurahAudioUrl(currentReciter.id, surah.id);
+            
+            if (!audioUrl) {
+                setError(ERROR_KEYS.FAILED_TO_LOAD_AUDIO);
+                setIsLoading(false);
+                return;
+            }
             
             if (audioRef.current) {
                 audioRef.current.src = audioUrl;
@@ -253,7 +262,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [currentReciter]);
+    }, [currentReciter, apiService]);
 
     const play = useCallback(() => {
         if (audioRef.current && currentSurah) {
