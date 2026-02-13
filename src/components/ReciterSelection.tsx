@@ -151,7 +151,7 @@ const ReciterSelection: React.FC<ReciterSelectionProps> = ({ reciters, selectedI
                                 {reciter.letter || reciter.name[0]}
                             </div>
                             <div className="flex-1 min-w-0">
-                                <h3 className={`text-sm font-semibold truncate ${selectedId === reciter.id ? 'text-primary' : 'text-gray-800 dark:text-gray-200'}`}>
+                                <h3 className={`text-sm font-semibold truncate ${selectedId === reciter.id ? 'text-primary' : 'text-gray-800 dark:text-gray-200'}`} lang="ar">
                                     {reciter.name}
                                 </h3>
                                 <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">

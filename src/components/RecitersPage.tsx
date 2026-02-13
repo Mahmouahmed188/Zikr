@@ -503,6 +503,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                                                 ? undefined
                                                 : 'var(--text-primary)'
                                         }}
+                                        lang="ar"
                                     >
                                         {reciter.name}
                                     </h3>
@@ -541,7 +542,7 @@ const RecitersPage: React.FC<RecitersPageProps> = ({ onClose }) => {
                         </div>
                         <div className="flex-1">
                             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{t('reciter.currentlySelected')}</p>
-                            <p className="text-sm font-semibold gold-text">{currentReciter.name}</p>
+                            <p className="text-sm font-semibold gold-text" lang="ar">{currentReciter.name}</p>
                         </div>
                     </div>
                 </div>

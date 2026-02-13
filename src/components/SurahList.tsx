@@ -53,7 +53,7 @@ const SurahList: React.FC<SurahListProps> = ({ surahs, activeSurahId, onSelect, 
                                     {surah.id}
                                 </span>
                                 <div>
-                                    <h4 className={`text-sm font-semibold ${isActive ? 'text-white' : 'text-gray-900 dark:text-white'}`}>{surah.name}</h4>
+                                    <h4 className={`text-sm font-semibold ${isActive ? 'text-white' : 'text-gray-900 dark:text-white'}`} lang="ar">{surah.name}</h4>
                                     <p className={`text-[10px] uppercase font-medium tracking-wide ${isActive ? 'text-white/80' : 'text-gray-400'}`}>{meta.englishName}</p>
                                 </div>
                             </div>

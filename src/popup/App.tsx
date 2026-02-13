@@ -251,7 +251,7 @@ const App: React.FC = () => {
                                 className="w-full h-10 pl-10 pr-10 text-sm rounded-xl theme-input shadow-inner"
                             />
                             {isDataLoading ? (
-                                <Loader2 size={16} className="absolute right-3 top-1/2 animate-spin"
+                                <Loader2 size={16} className="absolute right-3 top-1/2 pb-1 animate-spin"
                                     style={{ color: 'var(--text-muted)' }} />
                             ) : (
                                 <button
@@ -306,7 +306,7 @@ const App: React.FC = () => {
                                                         {surah.englishName || surah.name}
                                                     </span>
                                                 </div>
-                                                <span className="opacity-60 text-lg">{surah.name}</span>
+                                                 <span className="opacity-60 text-lg" lang="ar">{surah.name}</span>
                                             </button>
                                         ))
                                     ) : (
@@ -356,9 +356,9 @@ const App: React.FC = () => {
                                             <h2 className="text-xl font-bold gold-text tracking-wide mb-1.5 uppercase text-center">
                                                 {currentSurah.englishName || currentSurah.name}
                                             </h2>
-                                            <h3 className="text-base font-bold mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                                                {currentSurah.name}
-                                            </h3>
+                                                 <h3 className="text-base font-bold mb-2" style={{ color: 'var(--text-tertiary)' }} lang="ar">
+                                                 {currentSurah.name}
+                                             </h3>
 
                                             {currentSurah.verses && (
                                                 <div className="text-[10px] font-medium uppercase tracking-wider flex items-center gap-2 mb-3"

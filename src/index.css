@@ -98,7 +98,7 @@ body {
 }
 
 @layer utilities {
-  [lang="ar"], .arabic-text {
+  [lang="ar"], .arabic-text, html[dir="rtl"] {
     font-family: 'Scheherazade New', 'Amiri', serif;
   }
 }
@@ -219,22 +219,5 @@ body {
   
   .text-theme-muted {
     color: var(--text-muted);
-  }
-}
-
-@layer base {
-  @font-face {
-    font-family: 'Scheherazade New';
-    font-style: normal;
-    font-weight: 400;
-    src: url(https://fonts.gstatic.com/s/scheherazadenew/v11/wWYQyQx6l5pGT8ZzDN-YdDng4X8.woff2) format('woff2');
-    unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
-  }
-  @font-face {
-    font-family: 'Scheherazade New';
-    font-style: normal;
-    font-weight: 700;
-    src: url(https://fonts.gstatic.com/s/scheherazadenew/v11/wWYUyQx6l5pGT8ZzDN-YdDngqgY.woff2) format('woff2');
-    unicode-range: U+0600-06FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE80-FEFC;
   }
 }
